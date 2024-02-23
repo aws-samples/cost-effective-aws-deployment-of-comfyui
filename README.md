@@ -168,7 +168,7 @@ To run this example you need to do following:
 5. Queue workflow
   
 
-ℹ️ Additional examples like the head-rotate and programmable_pipeline are available in comfyui_examples folder
+ℹ️ Additional examples like the head-rotate and programmable_pipeline are available in comfyui_examples folder  
 ![](comfyui_examples/head-rotate/johnwick-head-rotate.gif "John Wick Head Rotate")
 ![](comfyui_examples/head-rotate/iron-man-rotate-3d.gif "Iron Man Head Rotate")
 
@@ -259,8 +259,6 @@ Additionally you could also change the instance type to other GPU Instances with
  * `cdk diff`        compare deployed stack with current state
  * `cdk docs`        open CDK documentation
 
-
-
 ## Q&A
 
 #### Does the dockerfile already pre-install models?
@@ -272,12 +270,15 @@ Yes, feel free to follow the [contribution](CONTRIBUTING.md#security-issue-notif
 #### Can this be consiered for production deployments?
 Consider this setup as an sample deployment for personal or non-production use.
 
-# License
+## Security
+
+See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+
+## License
 
 This library is licensed under the MIT-0 License. See the LICENSE file.
 
 - [License](LICENSE) of the project.
-- [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
 - [Code of Conduct](CONTRIBUTING.md#code-of-conduct) of the project.
 - [THIRD-PARTY](THIRD-PARTY) for more information about third party usage
 
