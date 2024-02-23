@@ -216,6 +216,8 @@ cdk destroy
 
 ## Cost considerations
 
+❗ These cost indicators are only raw estimations. Feel free to refine them for your project / use case.  
+
 Without any cost optimization the stack will incur approximately following costs per month.  
 For the calcuation following conditions were used:
 - Included nothing from the free tier
