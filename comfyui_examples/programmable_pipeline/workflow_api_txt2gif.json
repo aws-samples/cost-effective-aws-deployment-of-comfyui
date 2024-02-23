@@ -1,0 +1,120 @@
+{
+  "4": {
+    "inputs": {
+      "ckpt_name": "Epicrealismv5.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple"
+  },
+  "6": {
+    "inputs": {
+      "text": "(A_Rostov_Style:0.7), rough brush strokes:1.3, oil painting, soft lighting\nscenery, bridge, shoreline, ocean, skyline, windy, daylight,\nsoothing tones, calm colors, \nhdr, (intricate details, hyperdetailed:1.15)",
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode"
+  },
+  "7": {
+    "inputs": {
+      "text": "nsfw,lowres, ((bad anatomy)), ((bad hands)), text, missing finger, extra digits, fewer digits, blurry, ((mutated hands and fingers)), (poorly drawn face), ((mutation)), ((deformed face)), (ugly), ((bad proportions)), ((extra limbs)), extra face, (double head), (extra head), ((extra feet)), monster, logo, cropped, worst quality, low quality, normal quality, jpeg, humpbacked, long body, long neck, ((jpeg artifacts))",
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode"
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "15",
+        0
+      ],
+      "vae": [
+        "13",
+        0
+      ]
+    },
+    "class_type": "VAEDecode"
+  },
+  "12": {
+    "inputs": {
+      "frame_rate": 8,
+      "loop_count": 0,
+      "save_image": false,
+      "filename_prefix": "AnimateDiff",
+      "format": "image/gif",
+      "pingpong": false,
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "AnimateDiffCombine"
+  },
+  "13": {
+    "inputs": {
+      "vae_name": "wd.vae.safetensors"
+    },
+    "class_type": "VAELoader"
+  },
+  "15": {
+    "inputs": {
+      "inject_method": "default",
+      "frame_number": 16,
+      "seed": 931722080896203,
+      "steps": 20,
+      "cfg": 8,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "denoise": 1,
+      "motion_module": [
+        "16",
+        0
+      ],
+      "model": [
+        "4",
+        0
+      ],
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "latent_image": [
+        "20",
+        0
+      ]
+    },
+    "class_type": "AnimateDiffSampler"
+  },
+  "16": {
+    "inputs": {
+      "model_name": "mm_sd_v15_v2.ckpt",
+      "lora_stack": [
+        "26",
+        0
+      ]
+    },
+    "class_type": "AnimateDiffModuleLoader"
+  },
+  "20": {
+    "inputs": {
+      "width": 768,
+      "height": 512,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage"
+  },
+  "26": {
+    "inputs": {
+      "lora_name": "v2_lora_TiltUp.ckpt",
+      "alpha": 0.7000000000000001
+    },
+    "class_type": "AnimateDiffLoraLoader"
+  }
+}
