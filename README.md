@@ -63,7 +63,7 @@ When prompted, enter your AWS Access Key ID, Secret Access Key, and then the def
 
 You can change the used AWS account and region by setting the env variables below. You can also define the ECR repository name. These variables will be used in many of the commands below.
 ```bash
-export AWS_DEFAULT_REGION=<aws_region> # e.g. "us-east-1"
+export AWS_DEFAULT_REGION=<aws_region> # e.g. "us-east-1", "eu-central-1"
 export AWS_DEFAULT_ACCOUNT=<your_account_id> # e.g. 123456789012
 export ECR_REPO_NAME="comfyui"
 ```
