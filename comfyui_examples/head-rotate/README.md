@@ -26,12 +26,18 @@
 
 ## Generate
 
+### 1. head workflow + iterator Group
 * Load **head-rotate-character-sheet.jpg** to extract head openpose information and lineart. 
 * The **all-in-one-pixel-model** is the base model. **Pixel-sprite** lora enhances the pixel art style. 
 * **Lcm-lora-sd1.5** lora accelerates the overall speed with only 4-5 sampling steps and cfg ~= .15.
 * **Pixelization** fixes any broken or misaligned pixels. 
 * The end-to-end time is about **3-5s** (2 controlnets, 2 loras, 1 perfect pixel).
 * Crop the output image to 15-frames for each head angle
+
+### 2. Animatediff Group
+* Combine all the cropped images to gifs
+
+### 3. Other method
 * Send it to img2gif(https://imgflip.com/gif-maker) website
 
 
