@@ -7,7 +7,7 @@ import following workflow into ComfyUI console, this required AnimatedDiff Evolv
 
 ![workflow-animate](./workflow-animate.png)
 
-Activate "Enable Dev Mode Option" on ComfyUI Setting Pannel, and then save the workflow as API mode, you will get a json file.
+Activate "Enable Dev Mode Option" on ComfyUI Setting Pannel, and then save the workflow as API mode, you will get a json file (workflow_api_txt2gif).
 
 ### Progammable workflow
 
