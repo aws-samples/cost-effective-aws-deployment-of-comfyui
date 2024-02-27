@@ -2,10 +2,10 @@
 
 ## Prerequisite
 
-* Load the **head-rotate-pixel-workflow.json** into ComfyUI via drag and drop or over the ComfyUI-Manager Load button, you will see the workflow: 
+* Load the **head-rotate-character-animatediff-sheet.png** into ComfyUI via drag and drop or over the ComfyUI-Manager Load button, you will see the workflow: 
 
 
-![](./n-frames-head-perfect-pixel.png)
+![](./head-rotate-character-animatediff-sheet.png)
 
 
 * Make sure the version is updated via Manager ‘**update all**’ button
@@ -14,6 +14,8 @@
     * Custom nodes:
         * Manager: https://github.com/ltdrdata/ComfyUI-Manager
         * Image pixelization: https://github.com/WASasquatch/was-node-suite-comfyui
+        * JobIterator: https://github.com/ali1234/comfyui-job-iterator
+        * AnimateDiff: https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved
     * ControlNets:
         * openpose + lineart: https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors
     * Lora:
