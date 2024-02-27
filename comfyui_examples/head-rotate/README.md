@@ -2,7 +2,12 @@
 
 ## Prerequisite
 
-* Load the **head-rotate-pixel-workflow.json** into ComfyUI via drag and drop or over the ComfyUI-Manager Load button
+* Load the **head-rotate-pixel-workflow.json** into ComfyUI via drag and drop or over the ComfyUI-Manager Load button, you will see the workflow: 
+
+
+![](./n-frames-head-perfect-pixel.png)
+
+
 * Make sure the version is updated via Manager ‘**update all**’ button
 * Install the **missing custom nodes** from Manager Plugin 
 * Assets list:
