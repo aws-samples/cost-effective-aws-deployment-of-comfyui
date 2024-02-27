@@ -273,8 +273,8 @@ Yes, feel free to follow the [contribution](CONTRIBUTING.md#security-issue-notif
 Consider this setup as an sample deployment for personal or non-production use.
 
 ## Contributors
-[![contributors](https://contrib.rocks/image?repo=aws-samples/cost-effective-aws-deployment-of-comfyui&max=2000)](https://github.com/aws-samples/cost-effective-aws-deployment-of-comfyui/graphs/contributors)
-
+[![contributors](https://contrib.rocks/image?repo=aws-samples/cost-effective-aws-deployment-of-comfyui&max=1500)](https://github.com/aws-samples/cost-effective-aws-deployment-of-comfyui/graphs/contributors)
+ 
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
