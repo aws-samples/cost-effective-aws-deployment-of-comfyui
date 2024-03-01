@@ -234,7 +234,7 @@ class ComfyUIStack(Stack):
                 driver="rexray/ebs",
                 driver_opts={
                     "volumetype": "gp3",
-                    "size": "500"  # Size in GiB
+                    "size": "250"  # Size in GiB
                 },
                 autoprovision=True
             )
