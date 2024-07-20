@@ -7,7 +7,7 @@ sudo docker exec -it $container_id /bin/bash
 
 # 3. install models, loras, controlnets or whatever you need (you can also include all in a script and execute it to install)
 
-SDXL 1.0
+# SDXL 1.0
 wget -c https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors -P ./models/checkpoints/ 
 
 # SDXL Video

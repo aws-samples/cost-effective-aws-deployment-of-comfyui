@@ -22,11 +22,11 @@ from aws_cdk import (
     aws_lambda_python_alpha as lambda_python,
     custom_resources as cr,
     aws_cognito as cognito,
-
+    CfnOutput
 )
 from cdk_nag import NagSuppressions
 from constructs import Construct
-import json
+import json, hashlib
 import urllib.parse
 
 # Load the Environment Configuration from the JSON file
@@ -39,6 +39,11 @@ with open(
 class ComfyUIStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
+
+        # Setting
+        unique_input = f"{self.account}-{self.region}"
+        unique_hash = hashlib.sha256(unique_input.encode('utf-8')).hexdigest()[:10]
+        suffix = unique_hash.lower()
 
         # Use the default VPC
         #vpc = ec2.Vpc.from_lookup(self, "VPC", is_default=True)
@@ -380,10 +385,10 @@ class ComfyUIStack(Stack):
         alb = elbv2.ApplicationLoadBalancer(self, "ComfyUIALB", vpc=vpc, load_balancer_name="ComfyUIALB", internet_facing=True)
 
         # Access logging for the Load Balancer
-        log_bucket = s3.Bucket.from_bucket_name(
-            self, "LogBucket", "my-access-logs-bucket"
-        )
-        alb.log_access_logs(log_bucket, "load-balancer-logs/")
+        # log_bucket = s3.Bucket.from_bucket_name(
+        #     self, "LogBucket", "my-access-logs-bucket"
+        # )
+        # alb.log_access_logs(log_bucket, "load-balancer-logs/")
 
         # Redirect Load Balancer traffic on port 80 to port 443
         alb.add_redirect(
@@ -552,7 +557,7 @@ class ComfyUIStack(Stack):
         Sets up the cognito infrastructure with the user pool, custom domain
         and app client for use by the ALB.
         """
-        cognito_custom_domain = "comfyui-alb-auth-a"
+        cognito_custom_domain = f"comfyui-alb-auth-{suffix}"
         application_dns_name = alb.load_balancer_dns_name
 
         # Create the user pool that holds our users
@@ -753,7 +758,9 @@ class ComfyUIStack(Stack):
             suppressions=[
                 {"id": "AwsSolutions-EC23",
                  "reason": "The Security Group and ALB needs to allow 0.0.0.0/0 inbound access for the ALB to be publicly accessible. Additional security is provided via Cognito authentication."
-                }
+                },
+                { "id": "AwsSolutions-ELB2",
+                 "reason": "Adding access logs requires extra S3 bucket so removing it for sample purposes."},
             ],
             apply_to_children=True
         )
@@ -776,3 +783,5 @@ class ComfyUIStack(Stack):
             ],
             apply_to_children=True
         )
+
+        CfnOutput(self, "Endpoint", value=alb.load_balancer_dns_name)
