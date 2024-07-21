@@ -45,6 +45,19 @@ class ComfyUIStack(Stack):
         unique_hash = hashlib.sha256(unique_input.encode('utf-8')).hexdigest()[:10]
         suffix = unique_hash.lower()
 
+        # Get context
+        autoScaleDown = self.node.try_get_context("autoScaleDown")
+        if autoScaleDown is None:
+            autoScaleDown = True
+
+        useSpot = self.node.try_get_context("useSpot") or False
+        spotPrice = self.node.try_get_context("spotPrice") or "0.752"
+        
+        scheduleAutoScaling = self.node.try_get_context("scheduleAutoScaling") or False
+        timezone = self.node.try_get_context("timezone") or "UTC"
+        scheduleScaleUp = self.node.try_get_context("scheduleScaleUp") or "0 9 * * 1-5"
+        scheduleScaleDown = self.node.try_get_context("scheduleScaleDown") or "0 18 * * *"
+
         # Use the default VPC
         #vpc = ec2.Vpc.from_lookup(self, "VPC", is_default=True)
         vpc = ec2.Vpc(self, "CustomVPC",
@@ -120,6 +133,7 @@ class ComfyUIStack(Stack):
             auto_scaling_group_name=asg_name,
             vpc=vpc,
             instance_type=ec2.InstanceType("g4dn.2xlarge"),
+            spot_price=spotPrice if useSpot else None,
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(
                 hardware_type=ecs.AmiHardwareType.GPU
             ),
@@ -151,39 +165,62 @@ class ComfyUIStack(Stack):
             period=Duration.minutes(1)
         )
 
-        # create a CloudWatch alarm to track the CPU utilization
-        cpu_alarm = cloudwatch.Alarm(
-            self,
-            "CPUUtilizationAlarm",
-            metric=cpu_utilization_metric,
-            threshold=1,
-            evaluation_periods=60,
-            datapoints_to_alarm=60,
-            comparison_operator=cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD
-        )
+        # Scale down to zero if no activity for an hour
+        if autoScaleDown:
+            # create a CloudWatch alarm to track the CPU utilization
+            cpu_alarm = cloudwatch.Alarm(
+                self,
+                "CPUUtilizationAlarm",
+                metric=cpu_utilization_metric,
+                threshold=1,
+                evaluation_periods=60,
+                datapoints_to_alarm=60,
+                comparison_operator=cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD
+            )
+            scaling_action = autoscaling.StepScalingAction(
+                self,
+                "ScalingAction",
+                auto_scaling_group=auto_scaling_group,
+                adjustment_type=autoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
+                cooldown=Duration.seconds(120)
+            )
+            # Add scaling adjustments
+            scaling_action.add_adjustment(
+                adjustment=-1,  # scaling adjustment (reduce instance count by 1)
+                upper_bound=1   # upper threshold for CPU utilization
+            )
+            scaling_action.add_adjustment(
+                adjustment=0,   # No change in instance count
+                lower_bound=1   # Apply this when the metric is above 2%
+            )
+            # Link the StepScalingAction to the CloudWatch alarm
+            cpu_alarm.add_alarm_action(
+                cw_actions.AutoScalingAction(scaling_action)
+            )
 
-        scaling_action = autoscaling.StepScalingAction(
-            self,
-            "ScalingAction",
-            auto_scaling_group=auto_scaling_group,
-            adjustment_type=autoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
-            cooldown=Duration.seconds(120)
-        )
-
-        # Add scaling adjustments
-        scaling_action.add_adjustment(
-            adjustment=-1,  # scaling adjustment (reduce instance count by 1)
-            upper_bound=1   # upper threshold for CPU utilization
-        )
+        # Scheduled Scaling:
+        # (default) set desired capacity to 0 after work hour and 1 on start of work hour (only mon-fri)
+        # Use TZ identifier for timezone https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+        if scheduleAutoScaling:
+            # Create a scheduled action to set the desired capacity to 0
+            after_work_hours_action = autoscaling.ScheduledAction(
+                self,
+                "AfterWorkHoursAction",
+                auto_scaling_group=auto_scaling_group,
+                desired_capacity=0,
+                time_zone=timezone,
+                schedule=autoscaling.Schedule.expression(scheduleScaleDown)
+            )
+            # Create a scheduled action to set the desired capacity to 1
+            start_work_hours_action = autoscaling.ScheduledAction(
+                self,
+                "StartWorkHoursAction",
+                auto_scaling_group=auto_scaling_group,
+                desired_capacity=1,
+                time_zone=timezone,
+                schedule=autoscaling.Schedule.expression(scheduleScaleUp)
+            )
         
-        scaling_action.add_adjustment(
-            adjustment=0,   # No change in instance count
-            lower_bound=1   # Apply this when the metric is above 2%
-        )
-        # Link the StepScalingAction to the CloudWatch alarm
-        cpu_alarm.add_alarm_action(
-            cw_actions.AutoScalingAction(scaling_action)
-        )
 
         # Create an ECS Cluster
         cluster = ecs.Cluster(
