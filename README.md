@@ -124,7 +124,7 @@ arn:aws:cloudformation:[us-east-1]:[your-account-id]:stack/ComfyUIStack/[uuid]
 1. You can install models, loras, embedding, controlnets over ComfyUI-Manager
 2. You can extend (optional) and execute the upload script in this repo with a preselected list of models, controlnets etc. If the SSM command is not working, make sure that the role you are using is allowed to access the EC2.
 You'll find some additional examples in the
-`/comfyui_config/upload_models.sh` file.
+`/scripts/upload_models.sh` file.
 ```bash
 # 1. SSM into EC2
 aws ssm start-session --target "$(aws ec2 describe-instances --filters "Name=tag:Name,Values=ComfyUIStack/ASG" "Name=instance-state-name,Values=running" --query 'Reservations[*].Instances[*].[InstanceId]' --output text)" --region $AWS_DEFAULT_REGION
@@ -146,7 +146,7 @@ The deployed solution provides an EC2 accessible through an Application Load Bal
 ❗ Update the user_password variable before running the script  
 
 ```python
-python cognito_post_deploy_fix.py
+python scripts/cognito_post_deploy_fix.py
 ```
 
 
