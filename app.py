@@ -14,6 +14,7 @@ comfy_ui_stack = ComfyUIStack(app, "ComfyUIStack",
 
 Aspects.of(app).add(AwsSolutionsChecks(verbose=False))
 NagSuppressions.add_stack_suppressions( stack=comfy_ui_stack, suppressions=[
+    { "id": "AwsSolutions-L1", "reason": "Lambda Runtime is provided by custom resource provider and drain ecs hook implicitely and not critical for sample" },
     { "id": "AwsSolutions-IAM4", "reason": "For sample purposes the managed policy is sufficient"},
     { "id": "AwsSolutions-IAM5", "reason": "Some rules require '*' wildcard as an example ACM operations, and other are sufficient for Sample"}])
 

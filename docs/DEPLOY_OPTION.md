@@ -16,17 +16,17 @@ cdk deploy
 
 ## Security Related Settings
 
-### Disable Self Sign-Up
+### Enable Self Sign-Up
 
-You may disable user self-signup so administrator can fully control user from Cognito Console. 
+You may enable user self-signup so user can easily onboard to the application. You may combine it with email domain restriction described below to restrict user. Alternatively, you can also integrate application to your company SSO by following [SAML Authentication](#saml-authentication).
 
-Set `selfSignUpEnabled` to `false` in the context. (The default is `true`)
+Set `selfSignUpEnabled` to `true` in the context. (The default is `false`)
 
 **Edit [cdk.json](/cdk.json)**
 ```
 {
   "context": {
-    "selfSignUpEnabled": false,
+    "selfSignUpEnabled": true,
   }
 }
 ```
@@ -96,7 +96,7 @@ You can integrate with the SAML authentication functionality provided by IdPs su
 
 ### Spot Instance
 
-You can use spot instance to reduce cost for non-critical workload. Set `useSpot` to `true` in the context. You may also modify `spotPrice`. Instance will be available only when spot price is below `spotPrice`.
+You can use spot instance to reduce cost for non-critical workload. (The default is `true`) You can Set `useSpot` to `false` in the context to disable it. You may also modify `spotPrice`. Instance will be available only when spot price is below `spotPrice`.
 
 ```json
     "useSpot": true,

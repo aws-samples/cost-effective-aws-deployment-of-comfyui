@@ -22,7 +22,7 @@
     "timezone": "UTC",
     "scheduleScaleUp": "0 9 * * 1-5",
     "scheduleScaleDown": "0 18 * * *",
-    "selfSignUpEnabled": true,
+    "selfSignUpEnabled": false,
     "allowedSignUpEmailDomains": null,
     "samlAuthEnabled": false,
     "allowedIpV4AddressRanges": null,

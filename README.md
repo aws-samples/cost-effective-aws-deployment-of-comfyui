@@ -163,6 +163,18 @@ sudo docker exec -it $container_id /bin/bash
 wget -c https://huggingface.co/ai-forever/Real-ESRGAN/blob/main/RealESRGAN_x2.pth -P ./models/upscale_models/
 ```
 
+## Access ComfyUI
+
+The deployed solution provides an EC2 accessible through an Application Load Balancer. The Load Balancer requires authentication through Amazon Cognito User Pool. To create the admin user (and apply a post-deployment fix related to upper case letters in the Load Balancer URL) you will need to run a script before to proceed. The password is contained in the variable `user_password` and `should` be customized before to run the script.  
+
+❗ Update the user_password variable before running the script  
+
+```python
+python scripts/cognito_post_deploy_fix.py
+```
+
+Or alternatively you may enable self-signup / SAML authentication / manually create user in Cognito console.
+
 #### User Guide
 
 To unlock the full potential of ComfyUI and ensure a seamless experience, explore our detailed [User Guide](docs/USER_GUIDE.md). This comprehensive resource will guide you through every step, from installation to advanced configurations, empowering you to harness the power of AI-driven image generation with ease.
