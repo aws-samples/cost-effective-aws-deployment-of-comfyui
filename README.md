@@ -194,7 +194,7 @@ With our comprehensive Deploy Options, you have the power to craft a tailored so
 - [Configuration Method](docs/DEPLOY_OPTION.md#configuration-method)
     - [How to Change Values in cdk.json](docs/DEPLOY_OPTION.md#how-to-change-values-in-cdkjson)
 - [Security Related Settings](docs/DEPLOY_OPTION.md#security-related-settings)
-    - [Disable Self Sign-Up](docs/DEPLOY_OPTION.md#disable-self-sign-up)
+    - [Enable Self Sign-Up](docs/DEPLOY_OPTION.md#enable-self-sign-up)
     - [Restrict the email address domains that can sign up](docs/DEPLOY_OPTION.md#restrict-the-email-address-domains-that-can-sign-up)
     - [Enable AWS WAF restrictions](docs/DEPLOY_OPTION.md#enable-aws-waf-restrictions)
         - [IP address restrictions](docs/DEPLOY_OPTION.md#ip-address-restrictions)
