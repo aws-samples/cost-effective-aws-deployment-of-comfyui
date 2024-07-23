@@ -61,12 +61,19 @@ aws configure
 ```
 When prompted, enter your AWS Access Key ID, Secret Access Key, and then the default region name (eg. us-east-1). You can leave the output format field as default or specify it as per your preference.
 
-You can change the used AWS account and region by setting the env variables below. You can also define the ECR repository name. These variables will be used in many of the commands below.
+You can change the used AWS account 
 ```bash
-export AWS_DEFAULT_REGION=<aws_region> # e.g. "us-east-1", "eu-central-1"
-export AWS_DEFAULT_ACCOUNT=<your_account_id> # e.g. 123456789012
+echo "export AWS_DEFAULT_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)"
+# alternatively: export AWS_DEFAULT_ACCOUNT=<your_account_id> # e.g. 123456789012
+```
+and region by setting the env variables below. You can also define the ECR repository name.
+```bash
+echo "export AWS_DEFAULT_REGION=$(aws configure get region)"
+# alternatively: export AWS_DEFAULT_REGION=<aws_region> # e.g. "us-east-1", "eu-central-1"
+
 export ECR_REPO_NAME="comfyui"
 ```
+These variables will be used in many of the commands below.
 
 #### Build & push docker image to ECR
 You could build & reference your docker image in CDK directly, but we're using docker build and push the image to ECR, that we don't need to build the docker image with every CDK deployment. Additionally, the image is getting scanned
