@@ -123,6 +123,16 @@ You can scale down instances to zero to further reduce cost.
     "scheduleScaleDown": "0 18 * * *",
 ```
 
+### Use NAT Insatnce instead of NAT Gateway
+
+NAT Instance is cheaper, but have limited availability and network throughput compared to NAT Gateway. For more detail, check [NAT Gateway and NAT instance comparison](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-comparison.html).
+
+NAT Instance is used by default. You can change it to NAT Gateway by setting `cheapVpc` to `false`.
+
+```json
+    "cheapVpc": false,
+```
+
 ## Using a Custom Domain
 
 You can use a custom domain as the URL for your website. You must have a public hosted zone already created in Route53 under the same AWS account. For information on public hosted zones, please refer to this: [Working with Public Hosted Zones - Amazon Route 53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/AboutHZWorkingWith.html)

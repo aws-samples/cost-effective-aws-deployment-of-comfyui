@@ -17,6 +17,7 @@
   "context": {
     "useSpot": true,
     "spotPrice": "0.752",
+    "cheapVpc": true,
     "autoScaleDown": true,
     "scheduleAutoScaling": false,
     "timezone": "UTC",

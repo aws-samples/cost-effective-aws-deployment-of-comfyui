@@ -6,7 +6,7 @@ This guide will walk you through the basics of using ComfyUI, an application tha
 
 ComfyUI allows you to add new features by installing extensions, which are called Custom Nodes. By default, this solution comes with the [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager) extension installed, which makes it easy to install additional extensions and models.
 
-You can install more extensions either from the ComfyUI-Manager or by modifying the Dockerfile.
+You can install more extensions either from the ComfyUI-Manager, installing manually, or modifying the Dockerfile.
 
 To install an extension from the ComfyUI-Manager, follow these steps:
 
