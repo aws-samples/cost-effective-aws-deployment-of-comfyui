@@ -123,7 +123,7 @@ You can scale down instances to zero to further reduce cost.
     "scheduleScaleDown": "0 18 * * *",
 ```
 
-### Use NAT Insatnce instead of NAT Gateway
+### Use NAT Instance instead of NAT Gateway
 
 NAT Instance is cheaper, but have limited availability and network throughput compared to NAT Gateway. For more detail, check [NAT Gateway and NAT instance comparison](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-comparison.html).
 
