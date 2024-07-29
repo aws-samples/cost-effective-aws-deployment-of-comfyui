@@ -40,7 +40,7 @@ This sample repository provides a seamless and cost-effective solution to deploy
 
 For the sake of reproducability and consistency, we recommend using [AWS Cloud9](https://docs.aws.amazon.com/cloud9/latest/user-guide/welcome.html) IDE for deploying and testing this solution.
 
-ℹ️ You can use your local development environment, but you will need to make sure that you have AWS CLI, AWS CDK and Docker properly setup. Additionally, if you're building your docker image using apple chips (M1, M2, etc.) then you need to use the Docker ```docker build --platform linux/amd64 .``` command.
+ℹ️ You can use your local development environment, but you will need to **make sure that you have AWS CLI, AWS CDK and Docker properly setup**. Additionally, if you're building your docker image using apple chips (M1, M2, etc.) then you need to use the Docker ```docker build --platform linux/amd64 .``` command.
 
 <details>
 <summary>Click to see environment setup with Cloud9</summary>
@@ -67,22 +67,28 @@ For the sake of reproducability and consistency, we recommend using [AWS Cloud9]
 <details>
 <summary>Click to see environment setup with Local environment</summary>
 
-If you're not using Cloud9, then make sure that you execute the following commands on your local environment:
+If you do not have AWS CLI, follow [AWS CLI Install Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+
+If you do not have CDK, follow [CDK Start Guide](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html)
+
+If you do not have Docker follow [Docker Install Guide](https://docs.docker.com/engine/install/)
+
+If you haven't setup AWS CLI after installation, execute the following commands on your local environment:
 
 ```bash
 aws configure
 ```
 
 When prompted, enter your AWS Access Key ID, Secret Access Key, and then the default region name (eg. us-east-1). You can leave the output format field as default or specify it as per your preference.
+</details>
 
-You can change the used AWS account and region by setting the env variables below. You can also define the ECR repository name. These variables will be used in many of the commands below.
+After setting up environment, set environment variable below. These variables will be used in many of the commands below.
 
 ```bash
 export AWS_DEFAULT_REGION=<aws_region> # e.g. "us-east-1", "eu-central-1"
 export AWS_DEFAULT_ACCOUNT=<your_account_id> # e.g. 123456789012
 export ECR_REPO_NAME="comfyui"
 ```
-</details>
 
 ### Build & push docker image to ECR
 

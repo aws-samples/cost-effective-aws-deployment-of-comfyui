@@ -94,7 +94,13 @@ class ComfyUIStack(Stack):
                     cidr_mask=24
                 )
             ],
-            nat_gateway_provider=natInstance if cheapVpc else None
+            nat_gateway_provider=natInstance if cheapVpc else None,
+            gateway_endpoints={
+                # ECR Image Layer
+                "S3": ec2.GatewayVpcEndpointOptions(
+                    service=ec2.GatewayVpcEndpointAwsService.S3
+                )
+            }
         )
 
         if cheapVpc:
@@ -155,32 +161,52 @@ class ComfyUIStack(Stack):
             systemctl restart docker
         """)
 
-        asg_name="ComfyASG"
         # Create an Auto Scaling Group with two EBS volumes
-        auto_scaling_group = autoscaling.AutoScalingGroup(
+        launchTemplate = ec2.LaunchTemplate(
             self,
-            "ASG",
-            auto_scaling_group_name=asg_name,
-            vpc=vpc,
+            "Host",
+            launch_template_name="ComfyLaunchTemplateHost",
             instance_type=ec2.InstanceType("g4dn.2xlarge"),
-            spot_price=spotPrice if useSpot else None,
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(
                 hardware_type=ecs.AmiHardwareType.GPU
             ),
             role=ec2_role,
+            security_group=asg_security_group,
+            user_data=user_data_script,
+            block_devices=[
+                ec2.BlockDevice(
+                    device_name="/dev/xvda",
+                    volume=ec2.BlockDeviceVolume.ebs(volume_size=50,
+                                                     encrypted=True)
+                )
+            ],
+        )
+        auto_scaling_group = autoscaling.AutoScalingGroup(
+            self,
+            "ASG",
+            auto_scaling_group_name="ComfyASG",
+            vpc=vpc,
+            # Use Mixed Instance Policy to increase availability in case capacity is not available.
+            mixed_instances_policy=autoscaling.MixedInstancesPolicy(
+                instances_distribution=autoscaling.InstancesDistribution(
+                    on_demand_base_capacity=0,
+                    on_demand_percentage_above_base_capacity=0 if useSpot else 100,
+                    on_demand_allocation_strategy=autoscaling.OnDemandAllocationStrategy.LOWEST_PRICE,
+                    spot_allocation_strategy=autoscaling.SpotAllocationStrategy.LOWEST_PRICE,
+                    spot_instance_pools=1,
+                    spot_max_price=spotPrice,
+                ),
+                launch_template=launchTemplate,
+                launch_template_overrides=[
+                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g4dn.2xlarge")),
+                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g5.2xlarge")),
+                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g6.2xlarge")),
+                ],
+            ),
             min_capacity=0,
             max_capacity=1,
             desired_capacity=1,
             new_instances_protected_from_scale_in=False,
-            security_group=asg_security_group,
-            user_data=user_data_script,
-            block_devices=[
-                autoscaling.BlockDevice(
-                    device_name="/dev/xvda",
-                    volume=autoscaling.BlockDeviceVolume.ebs(volume_size=50, 
-                                                             encrypted=True)
-                )
-            ]
         )
 
         auto_scaling_group.apply_removal_policy(RemovalPolicy.DESTROY)
