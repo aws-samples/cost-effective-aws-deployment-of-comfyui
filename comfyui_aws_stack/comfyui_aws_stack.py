@@ -55,6 +55,7 @@ class ComfyUIStack(Stack):
 
         useSpot = self.node.try_get_context("useSpot") or False
         spotPrice = self.node.try_get_context("spotPrice") or "0.752"
+        cheapVpc = self.node.try_get_context("cheapVpc") or False
         
         scheduleAutoScaling = self.node.try_get_context("scheduleAutoScaling") or False
         timezone = self.node.try_get_context("timezone") or "UTC"
@@ -71,21 +72,43 @@ class ComfyUIStack(Stack):
         hostedZoneId = self.node.try_get_context("hostedZoneId") or None
 
         # Use the default VPC
-        #vpc = ec2.Vpc.from_lookup(self, "VPC", is_default=True)
-        vpc = ec2.Vpc(self, "CustomVPC",
-                    max_azs=2,  # Define the maximum number of Availability Zones
-                    subnet_configuration=[
-                        ec2.SubnetConfiguration(
-                            name="Public",
-                            subnet_type=ec2.SubnetType.PUBLIC,
-                            cidr_mask=24
-                        ),
-                        ec2.SubnetConfiguration(
-                            name="Private",
-                            subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
-                            cidr_mask=24
-                        )
-                    ])
+        # vpc = ec2.Vpc.from_lookup(self, "VPC", is_default=True)
+        if cheapVpc:
+            natInstance = ec2.NatProvider.instance_v2(
+                instance_type=ec2.InstanceType("t4g.nano"),
+                default_allowed_traffic=ec2.NatTrafficDirection.OUTBOUND_ONLY,
+            )
+        
+        vpc = ec2.Vpc(
+            self, "CustomVPC",
+            max_azs=2,  # Define the maximum number of Availability Zones
+            subnet_configuration=[
+                ec2.SubnetConfiguration(
+                    name="Public",
+                    subnet_type=ec2.SubnetType.PUBLIC,
+                    cidr_mask=24
+                ),
+                ec2.SubnetConfiguration(
+                    name="Private",
+                    subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS,
+                    cidr_mask=24
+                )
+            ],
+            nat_gateway_provider=natInstance if cheapVpc else None,
+            gateway_endpoints={
+                # ECR Image Layer
+                "S3": ec2.GatewayVpcEndpointOptions(
+                    service=ec2.GatewayVpcEndpointAwsService.S3
+                )
+            }
+        )
+
+        if cheapVpc:
+            natInstance.security_group.add_ingress_rule(
+                ec2.Peer.ipv4(vpc.vpc_cidr_block),
+                ec2.Port.all_traffic(),
+                "Allow NAT Traffic from inside VPC",
+            )
 
 
         # Enable VPC Flow Logs
@@ -95,6 +118,20 @@ class ComfyUIStack(Stack):
             resource_type=ec2.FlowLogResourceType.from_vpc(vpc),
             destination=ec2.FlowLogDestination.to_cloud_watch_logs(),
         )
+        
+        # Create ALB Security Group
+        alb_security_group = ec2.SecurityGroup(
+            self,
+            "ALBSecurityGroup",
+            vpc=vpc,
+            description="Security Group for ALB",
+            allow_all_outbound=True,
+        )
+        alb_security_group.add_ingress_rule(
+            ec2.Peer.any_ipv4(),
+            ec2.Port.tcp(443),
+            "Allow inbound traffic on port 443",
+        )
 
         # Create Auto Scaling Group Security Group
         asg_security_group = ec2.SecurityGroup(
@@ -103,19 +140,6 @@ class ComfyUIStack(Stack):
             vpc=vpc,
             description="Security Group for ASG",
             allow_all_outbound=True,
-        )
-
-        # Allow inbound traffic on port 80
-        asg_security_group.add_ingress_rule(
-            ec2.Peer.any_ipv4(),
-            ec2.Port.tcp(80),
-            "Allow inbound traffic on port 80",
-        )
-        # Allow inbound traffic on port 443
-        asg_security_group.add_ingress_rule(
-            ec2.Peer.any_ipv4(),
-            ec2.Port.tcp(443),
-            "Allow inbound traffic on port 443",
         )
 
         # EC2 Role for AWS internal use (if necessary)
@@ -137,32 +161,52 @@ class ComfyUIStack(Stack):
             systemctl restart docker
         """)
 
-        asg_name="ComfyASG"
         # Create an Auto Scaling Group with two EBS volumes
-        auto_scaling_group = autoscaling.AutoScalingGroup(
+        launchTemplate = ec2.LaunchTemplate(
             self,
-            "ASG",
-            auto_scaling_group_name=asg_name,
-            vpc=vpc,
+            "Host",
+            launch_template_name="ComfyLaunchTemplateHost",
             instance_type=ec2.InstanceType("g4dn.2xlarge"),
-            spot_price=spotPrice if useSpot else None,
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(
                 hardware_type=ecs.AmiHardwareType.GPU
             ),
             role=ec2_role,
+            security_group=asg_security_group,
+            user_data=user_data_script,
+            block_devices=[
+                ec2.BlockDevice(
+                    device_name="/dev/xvda",
+                    volume=ec2.BlockDeviceVolume.ebs(volume_size=50,
+                                                     encrypted=True)
+                )
+            ],
+        )
+        auto_scaling_group = autoscaling.AutoScalingGroup(
+            self,
+            "ASG",
+            auto_scaling_group_name="ComfyASG",
+            vpc=vpc,
+            # Use Mixed Instance Policy to increase availability in case capacity is not available.
+            mixed_instances_policy=autoscaling.MixedInstancesPolicy(
+                instances_distribution=autoscaling.InstancesDistribution(
+                    on_demand_base_capacity=0,
+                    on_demand_percentage_above_base_capacity=0 if useSpot else 100,
+                    on_demand_allocation_strategy=autoscaling.OnDemandAllocationStrategy.LOWEST_PRICE,
+                    spot_allocation_strategy=autoscaling.SpotAllocationStrategy.LOWEST_PRICE,
+                    spot_instance_pools=1,
+                    spot_max_price=spotPrice,
+                ),
+                launch_template=launchTemplate,
+                launch_template_overrides=[
+                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g4dn.2xlarge")),
+                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g5.2xlarge")),
+                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g6.2xlarge")),
+                ],
+            ),
             min_capacity=0,
             max_capacity=1,
             desired_capacity=1,
             new_instances_protected_from_scale_in=False,
-            security_group=asg_security_group,
-            user_data=user_data_script,
-            block_devices=[
-                autoscaling.BlockDevice(
-                    device_name="/dev/xvda",
-                    volume=autoscaling.BlockDeviceVolume.ebs(volume_size=50, 
-                                                             encrypted=True)
-                )
-            ]
         )
 
         auto_scaling_group.apply_removal_policy(RemovalPolicy.DESTROY)
@@ -351,7 +395,7 @@ class ComfyUIStack(Stack):
 
         # Allow inbound traffic on port 8181
         service_security_group.add_ingress_rule(
-            ec2.Peer.any_ipv4(),
+            ec2.Peer.security_group_id(alb_security_group.security_group_id),
             ec2.Port.tcp(8181),
             "Allow inbound traffic on port 8181",
         )
@@ -369,17 +413,18 @@ class ComfyUIStack(Stack):
                 )
             ],
             security_groups=[service_security_group],
-            health_check_grace_period=Duration.seconds(30)
+            health_check_grace_period=Duration.seconds(30),
+            min_healthy_percent=0,
         )
 
         # Application Load Balancer
-        alb = elbv2.ApplicationLoadBalancer(self, "ComfyUIALB", vpc=vpc, load_balancer_name="ComfyUIALB", internet_facing=True)
-
-        # Access logging for the Load Balancer
-        # log_bucket = s3.Bucket.from_bucket_name(
-        #     self, "LogBucket", "my-access-logs-bucket"
-        # )
-        # alb.log_access_logs(log_bucket, "load-balancer-logs/")
+        alb = elbv2.ApplicationLoadBalancer(
+            self, "ComfyUIALB",
+            vpc=vpc,
+            load_balancer_name="ComfyUIALB",
+            internet_facing=True,
+            security_group=alb_security_group
+        )
 
         # Redirect Load Balancer traffic on port 80 to port 443
         alb.add_redirect(
@@ -915,7 +960,7 @@ class ComfyUIStack(Stack):
             )
 
         NagSuppressions.add_resource_suppressions(
-            [asg_security_group,service_security_group,alb],
+            [alb_security_group,asg_security_group,service_security_group,alb],
             suppressions=[
                 {"id": "AwsSolutions-EC23",
                  "reason": "The Security Group and ALB needs to allow 0.0.0.0/0 inbound access for the ALB to be publicly accessible. Additional security is provided via Cognito authentication."
@@ -941,6 +986,27 @@ class ComfyUIStack(Stack):
                 {"id": "AwsSolutions-AS3",
                  "reason": "Not all notifications are critical for ComfyUI sample"
                 }
+            ],
+            apply_to_children=True
+        )
+        NagSuppressions.add_resource_suppressions(
+            [task_definition],
+            suppressions=[
+                {"id": "AwsSolutions-ECS2",
+                 "reason": "Recent aws-cdk-lib version adds 'AWS_REGION' environment variable implicitly."
+                },
+            ],
+            apply_to_children=True
+        )
+        NagSuppressions.add_resource_suppressions(
+            [vpc],
+            suppressions=[
+                {"id": "AwsSolutions-EC28",
+                "reason": "NAT Instance does not require autoscaling."
+                },
+                {"id": "AwsSolutions-EC29",
+                "reason": "NAT Instance does not require autoscaling."
+                },
             ],
             apply_to_children=True
         )

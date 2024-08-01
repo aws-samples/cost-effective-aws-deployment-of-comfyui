@@ -36,11 +36,11 @@ This sample repository provides a seamless and cost-effective solution to deploy
 
 ## Getting Started
 
-#### Prepare the AWS environment
+### Prepare the AWS environment
 
 For the sake of reproducability and consistency, we recommend using [AWS Cloud9](https://docs.aws.amazon.com/cloud9/latest/user-guide/welcome.html) IDE for deploying and testing this solution.
 
-ℹ️ You can use your local development environment, but you will need to make sure that you have AWS CLI, AWS CDK and Docker properly setup. Additionally, if you're building your docker image using apple chips (M1, M2, etc.) then you need to use the Docker ```docker build --platform linux/amd64 .``` command.
+ℹ️ You can use your local development environment, but you will need to **make sure that you have AWS CLI, AWS CDK and Docker properly setup**. Additionally, if you're building your docker image using apple chips (M1, M2, etc.) then you need to use the Docker ```docker build --platform linux/amd64 .``` command.
 
 <details>
 <summary>Click to see environment setup with Cloud9</summary>
@@ -67,24 +67,30 @@ For the sake of reproducability and consistency, we recommend using [AWS Cloud9]
 <details>
 <summary>Click to see environment setup with Local environment</summary>
 
-If you're not using Cloud9, then make sure that you execute the following commands on your local environment:
+If you do not have AWS CLI, follow [AWS CLI Install Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+
+If you do not have CDK, follow [CDK Start Guide](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html)
+
+If you do not have Docker follow [Docker Install Guide](https://docs.docker.com/engine/install/)
+
+If you haven't setup AWS CLI after installation, execute the following commands on your local environment:
 
 ```bash
 aws configure
 ```
 
 When prompted, enter your AWS Access Key ID, Secret Access Key, and then the default region name (eg. us-east-1). You can leave the output format field as default or specify it as per your preference.
+</details>
 
-You can change the used AWS account and region by setting the env variables below. You can also define the ECR repository name. These variables will be used in many of the commands below.
+After setting up environment, set environment variable below. These variables will be used in many of the commands below.
 
 ```bash
 export AWS_DEFAULT_REGION=<aws_region> # e.g. "us-east-1", "eu-central-1"
 export AWS_DEFAULT_ACCOUNT=<your_account_id> # e.g. 123456789012
 export ECR_REPO_NAME="comfyui"
 ```
-</details>
 
-#### Build & push docker image to ECR
+### Build & push docker image to ECR
 
 You could build & reference your docker image in CDK directly, but we're using docker build and push the image to ECR, that we don't need to build the docker image with every CDK deployment. Additionally, the image is getting scanned
 for vulnerabilites as soon as you push the image to ECR. You can achieve this as following:
@@ -109,7 +115,7 @@ docker tag comfyui:latest $AWS_DEFAULT_ACCOUNT.dkr.ecr.$AWS_DEFAULT_REGION.amazo
 docker push $AWS_DEFAULT_ACCOUNT.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPO_NAME:latest
 ```
 
-#### Deploying ComfyUI
+### Deploying ComfyUI
 
 1. (First time only) Install Required Dependency
 ```python
@@ -143,7 +149,7 @@ arn:aws:cloudformation:[us-east-1]:[your-account-id]:stack/ComfyUIStack/[uuid]
 
 You can access application from output value of `ComfyUIStack.Endpoint`.
 
-#### Uploading models
+### Uploading models
 
 1. You can install models, loras, embedding, controlnets over ComfyUI-Manager or other extension (custom node). See [User Guide](docs/USER_GUIDE.md#model-installation) for detail.
 2. You can extend (optional) and execute the upload script in this repo with a preselected list of models, controlnets etc. If the SSM command is not working, make sure that the role you are using is allowed to access the EC2. You'll find some additional examples in the `/scripts/upload_models.sh` file.
@@ -162,7 +168,7 @@ sudo docker exec -it $container_id /bin/bash
 wget -c https://huggingface.co/ai-forever/Real-ESRGAN/blob/main/RealESRGAN_x2.pth -P ./models/upscale_models/
 ```
 
-## Access ComfyUI
+### Access ComfyUI
 
 The deployed solution provides an EC2 accessible through an Application Load Balancer. The Load Balancer requires authentication through Amazon Cognito User Pool. To create the admin user (and apply a post-deployment fix related to upper case letters in the Load Balancer URL) you will need to run a script before to proceed. The password is contained in the variable `user_password` and `should` be customized before to run the script.  
 
@@ -174,7 +180,7 @@ python scripts/cognito_post_deploy_fix.py
 
 Or alternatively you may enable self-signup / SAML authentication / manually create user in Cognito console.
 
-#### User Guide
+### User Guide
 
 To unlock the full potential of ComfyUI and ensure a seamless experience, explore our detailed [User Guide](docs/USER_GUIDE.md). This comprehensive resource will guide you through every step, from installation to advanced configurations, empowering you to harness the power of AI-driven image generation with ease.
 
@@ -187,7 +193,7 @@ To unlock the full potential of ComfyUI and ensure a seamless experience, explor
     - [Manual Installation](docs/USER_GUIDE.md#manual-installation)
 - [Running a Workflow](docs/USER_GUIDE.md#running-a-workflow)
 
-#### Deploy Option
+### Deploy Option
 
 With our comprehensive Deploy Options, you have the power to craft a tailored solution that aligns perfectly with your security requirements, and budget constraints. Unlock the full potential of ComfyUI on AWS with unparalleled flexibility and control.You can enable following features with just few steps.
 
@@ -202,11 +208,12 @@ With our comprehensive Deploy Options, you have the power to craft a tailored so
 - [Cost-related Settings](docs/DEPLOY_OPTION.md#cost-related-settings)
     - [Spot Instance](docs/DEPLOY_OPTION.md#spot-instance)
     - [Scale Down automatically / on schedule](docs/DEPLOY_OPTION.md#scale-down-automatically--on-schedule)
+    - [Use NAT Insatnce instead of NAT Gateway](docs/DEPLOY_OPTION.md#use-nat-insatnce-instead-of-nat-gateway)
 - [Using a Custom Domain](docs/DEPLOY_OPTION.md#using-a-custom-domain)
 
 
 
-## Delete deployments and cleanup resources
+### Delete deployments and cleanup resources
 
 For the sake of preventing data loss from accidental deletions and keeping the example as straightforward as possible, the deletion of the complete deployment and resources is semi-automated. To cleanup and remove everything you've deployed you need to do following:
 
@@ -251,34 +258,37 @@ cdk destroy
 
 Without any cost optimization the stack will incur approximately following costs per month.  
 For the calcuation following conditions were used:
+
 - Included nothing from the free tier
 - Instance Type ```g4dn.2xlarge with 8 vCPU 32 GiB memory and 1 Nvidia T4 tensor core``` on-demand pricing
-- 500 GB SSD storage with daily snapshots
+- 250 GB SSD storage with daily snapshots
 - 1x Application Load Balancer
 - VPC with 50 GB of data processed per Nat Gateway per month
-- ECR with 20gb stored per month
+- ECR with 10gb stored per month
 - Logs with 5GB of logging data per month
 
-| Service \ Runtime      | 2 hours a day | 8 hours a day | 12 hours a day | 24/7          |
-|--------------|---------------|---------------|----------------|---------------|
-| Compute    | 45$         | 183$         | 275$          | 550$         |
-| Storage    | 6$         | 26$         | 38$          | 78$         |
-| Logging    | -         | -         | -         | 3$         |
-| Networking    | -         | -         | -          | 51$         |
-| Registry         | -          | -           | -            | 2$           |
+| Service \ Runtime  | 2 hours a day | 8 hours a day | 12 hours a day | 24/7          |
+|--------------------|---------------|---------------|----------------|---------------|
+| Compute            | $45           | $183          | $275           | $550          |
+| Storage            | -             | -             | -              | $35           |
+| ALB                | -             | -             | -              | $20           |
+| Networking         | -             | -             | -              | $70           |
+| Registry           | -             | -             | -              | $1            |
+| Logging            | -             | -             | -              | $3            |
 
 
 With a little bit of optimization you achieve following costs:
 
-ℹ️ For non-critical business workload (should apply to the majority of applications of this type) you can go with Spot Instances, which would lead to an average historical discount of 62% (Dec 2024) for g4dn.2xlarge. No Snapshot needed for storage for ephermal data.
+ℹ️ For non-critical business workload (should apply to the majority of applications of this type) you can go with Spot Instances, which would lead to an average historical discount of 62% (Jul 2024) for g4dn.2xlarge. No Snapshot needed for storage for ephermal data. Replace NAT Gateway by NAT Instance.
 
-| Service \ Runtime      | 2 hours a day | 8 hours a day | 12 hours a day | 24/7          |
-|--------------|---------------|---------------|----------------|---------------|
-| Compute    | 28$         | 114$         | 170$          | 340$         |
-| Storage    | 4$         | 17$         | 25$          | 50$         |
-| Logging    | -         | -         | -          | 3$         |
-| Networking    | -         | -         | -          | 51$         |
-| Registry         | ...           | ...           | ...            | 2$           |
+| Service \ Runtime  | 2 hours a day | 8 hours a day | 12 hours a day | 24/7          |
+|--------------------|---------------|---------------|----------------|---------------|
+| Compute            | $17           | $69           | $104           | $208          |
+| Storage            | -             | -             | -              | $20           |
+| ALB                | -             | -             | -              | $20           |
+| Networking         | -             | -             | -              | $6            |
+| Registry           | -             | -             | -              | $1            |
+| Logging            | -             | -             | -              | $3            |
 
 Additionally you could also change the instance type to other GPU Instances with less cpu and memory.
 
