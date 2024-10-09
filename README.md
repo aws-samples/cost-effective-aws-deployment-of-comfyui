@@ -93,11 +93,14 @@ When prompted, enter your AWS Access Key ID, Secret Access Key, and then the def
 
 1. (First time only) Clone this repo
 2. (First time only) cd into repo directory
-3. Set environment variable below. These variables will be used in many of the commands below.
+3. You can change the used AWS account and region by setting the env variables below. These variables will be used in many of the commands below.
 
 ```bash
-export AWS_DEFAULT_REGION=<aws_region> # e.g. "us-east-1", "eu-central-1"
-export AWS_DEFAULT_ACCOUNT=<your_account_id> # e.g. 123456789012
+echo "export AWS_DEFAULT_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)"
+echo "export AWS_DEFAULT_REGION=$(aws configure get region)"
+
+# alternatively: export AWS_DEFAULT_ACCOUNT=<your_account_id> # e.g. 123456789012
+# alternatively: export AWS_DEFAULT_REGION=<aws_region> # e.g. "us-east-1", "eu-central-1"
 ```
 
 ### Build & push docker image to ECR
