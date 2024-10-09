@@ -9,10 +9,14 @@ from cdk_nag import AwsSolutionsChecks, NagSuppressions
 app = cdk.App()
 comfy_ui_stack = ComfyUIStack(
     app, "ComfyUIStack",
+    description="ComfyUI on AWS (uksb-ggn3251wsp)",
     env=Environment(
         account=os.environ["CDK_DEFAULT_ACCOUNT"],
         region=os.environ["CDK_DEFAULT_REGION"]
-    )
+    ),
+    tags={
+        "Repository": "aws-samples/cost-effective-aws-deployment-of-comfyui"
+    }
 )
 
 Aspects.of(app).add(AwsSolutionsChecks(verbose=False))

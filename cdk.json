@@ -25,6 +25,7 @@
     "scheduleScaleDown": "0 18 * * *",
     "selfSignUpEnabled": false,
     "allowedSignUpEmailDomains": null,
+    "mfaRequired": false,
     "samlAuthEnabled": false,
     "allowedIpV4AddressRanges": null,
     "allowedIpV6AddressRanges": null,
