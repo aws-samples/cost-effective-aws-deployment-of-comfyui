@@ -74,7 +74,9 @@ class ComfyUIStack(Stack):
             "selfSignUpEnabled") or False
         allowedSignUpEmailDomains = self.node.try_get_context(
             "allowedSignUpEmailDomains") or None
+        mfaRequired = self.node.try_get_context("mfaRequired") or False
         samlAuthEnabled = self.node.try_get_context("samlAuthEnabled") or False
+
         allowedIpV4AddressRanges = self.node.try_get_context(
             "allowedIpV4AddressRanges") or None
         allowedIpV6AddressRanges = self.node.try_get_context(
@@ -341,7 +343,7 @@ class ComfyUIStack(Stack):
 
         # Docker Volume Configuration
         volume = ecs.Volume(
-            name="ComfyUIVolume",
+            name="ComfyUIVolume-" + suffix,
             docker_volume_configuration=ecs.DockerVolumeConfiguration(
                 scope=ecs.Scope.SHARED,
                 driver="rexray/ebs",
@@ -386,7 +388,7 @@ class ComfyUIStack(Stack):
         container.add_mount_points(
             ecs.MountPoint(
                 container_path="/home/user/opt/ComfyUI",
-                source_volume="ComfyUIVolume",
+                source_volume=volume.name,
                 read_only=False
             )
         )
@@ -711,7 +713,9 @@ class ComfyUIStack(Stack):
                 require_digits=True,
                 require_symbols=True
             ),
-            advanced_security_mode=cognito.AdvancedSecurityMode.ENFORCED
+            advanced_security_mode=cognito.AdvancedSecurityMode.ENFORCED,
+            mfa_second_factor=cognito.MfaSecondFactor(otp=True, sms=True),
+            mfa=cognito.Mfa.REQUIRED if not samlAuthEnabled and mfaRequired else cognito.Mfa.OPTIONAL,
         )
 
         # Add a custom domain for the hosted UI
