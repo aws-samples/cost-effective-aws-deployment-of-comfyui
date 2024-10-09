@@ -19,17 +19,17 @@ from aws_cdk import (
     CustomResource,
     aws_certificatemanager as acm,
     aws_lambda as lambda_,
-    aws_lambda_python_alpha as lambda_python,
     custom_resources as cr,
     aws_cognito as cognito,
     aws_wafv2 as wafv2,
     aws_route53 as route53,
     aws_route53_targets as route53_targets,
+    BundlingOptions,
     CfnOutput
 )
 from cdk_nag import NagSuppressions
 from constructs import Construct
-import json, hashlib
+import os, json, hashlib
 import urllib.parse
 
 # Load the Environment Configuration from the JSON file
@@ -44,7 +44,7 @@ class ComfyUIStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # Setting
-        unique_input = f"{self.account}-{self.region}"
+        unique_input = f"{self.account}-{self.region}-{self.stack_name}"
         unique_hash = hashlib.sha256(unique_input.encode('utf-8')).hexdigest()[:10]
         suffix = unique_hash.lower()
 
@@ -70,6 +70,9 @@ class ComfyUIStack(Stack):
         hostName = self.node.try_get_context("hostName") or None
         domainName = self.node.try_get_context("domainName") or None
         hostedZoneId = self.node.try_get_context("hostedZoneId") or None
+
+        # Check host
+        is_sagemaker_studio = "SAGEMAKER_APP_TYPE_LOWERCASE" in os.environ
 
         # Use the default VPC
         # vpc = ec2.Vpc.from_lookup(self, "VPC", is_default=True)
@@ -165,7 +168,6 @@ class ComfyUIStack(Stack):
         launchTemplate = ec2.LaunchTemplate(
             self,
             "Host",
-            launch_template_name="ComfyLaunchTemplateHost",
             instance_type=ec2.InstanceType("g4dn.2xlarge"),
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(
                 hardware_type=ecs.AmiHardwareType.GPU
@@ -184,7 +186,6 @@ class ComfyUIStack(Stack):
         auto_scaling_group = autoscaling.AutoScalingGroup(
             self,
             "ASG",
-            auto_scaling_group_name="ComfyASG",
             vpc=vpc,
             # Use Mixed Instance Policy to increase availability in case capacity is not available.
             mixed_instances_policy=autoscaling.MixedInstancesPolicy(
@@ -282,7 +283,6 @@ class ComfyUIStack(Stack):
         cluster = ecs.Cluster(
             self, "ComfyUICluster", 
             vpc=vpc, 
-            cluster_name="ComfyUICluster", 
             container_insights=True
         )
         
@@ -320,7 +320,6 @@ class ComfyUIStack(Stack):
         log_group = logs.LogGroup(
             self,
             "LogGroup",
-            log_group_name="/ecs/comfy-ui",
             removal_policy=RemovalPolicy.DESTROY,
         )
 
@@ -404,7 +403,6 @@ class ComfyUIStack(Stack):
         service = ecs.Ec2Service(
             self,
             "ComfyUIService",
-            service_name="ComfyUIService",
             cluster=cluster,
             task_definition=task_definition,
             capacity_provider_strategies=[
@@ -421,7 +419,6 @@ class ComfyUIStack(Stack):
         alb = elbv2.ApplicationLoadBalancer(
             self, "ComfyUIALB",
             vpc=vpc,
-            load_balancer_name="ComfyUIALB",
             internet_facing=True,
             security_group=alb_security_group
         )
@@ -456,34 +453,31 @@ class ComfyUIStack(Stack):
             resources=["*"]
         ))
 
-        admin_lambda = lambda_python.PythonFunction(
+        admin_lambda = lambda_.Function(
             self,
             "AdminFunction",
-            entry="./comfyui_aws_stack/admin_lambda", 
-            index="admin.py", 
-            handler="handler", 
+            handler="admin.handler",
+            code=lambda_.Code.from_asset("./comfyui_aws_stack/admin_lambda"),
             role=lambda_role,
             runtime=lambda_.Runtime.PYTHON_3_12,
             timeout=Duration.seconds(amount=60)
         )
 
-        restart_docker_lambda = lambda_python.PythonFunction(
+        restart_docker_lambda = lambda_.Function(
             self,
             "RestartDockerFunction",
-            entry="./comfyui_aws_stack/admin_lambda", 
-            index="restart_docker.py", 
-            handler="handler", 
+            handler="restart_docker.handler",
+            code=lambda_.Code.from_asset("./comfyui_aws_stack/admin_lambda"),
             role=lambda_role,
             runtime=lambda_.Runtime.PYTHON_3_12,
             timeout=Duration.seconds(amount=60)
         )
 
-        shutdown_lambda = lambda_python.PythonFunction(
+        shutdown_lambda = lambda_.Function(
             self,
             "ShutdownFunction",
-            index="shutdown.py", 
-            entry="./comfyui_aws_stack/admin_lambda", 
-            handler="handler", 
+            handler="shutdown.handler",
+            code=lambda_.Code.from_asset("./comfyui_aws_stack/admin_lambda"),
             role=lambda_role, 
             runtime=lambda_.Runtime.PYTHON_3_12,
             timeout=Duration.seconds(amount=60)
@@ -529,7 +523,7 @@ class ComfyUIStack(Stack):
             target_type=elbv2.TargetType.IP,
             targets=[
                 service.load_balancer_target(
-                    container_name="ComfyUIContainer", container_port=8181
+                    container_name=container.container_name, container_port=8181
                 )],
             health_check=elbv2.HealthCheck(
                 enabled=True,
@@ -547,7 +541,6 @@ class ComfyUIStack(Stack):
         lambda_admin_target_group = elbv2.ApplicationTargetGroup(
             self,
             "LambdaAdminTargetGroup",
-            target_group_name="LambdaAdminTargetGroup",
             vpc=vpc,
             target_type=elbv2.TargetType.LAMBDA,
             targets=[targets.LambdaTarget(admin_lambda)]
@@ -556,7 +549,6 @@ class ComfyUIStack(Stack):
         lambda_restart_docker_target_group = elbv2.ApplicationTargetGroup(
             self,
             "LambdaRestartDockerTargetGroup",
-            target_group_name="LambdaRestartDockerTargetGroup",
             vpc=vpc,
             target_type=elbv2.TargetType.LAMBDA,
             targets=[targets.LambdaTarget(restart_docker_lambda)]
@@ -565,7 +557,6 @@ class ComfyUIStack(Stack):
         lambda_shutdown_target_group = elbv2.ApplicationTargetGroup(
             self,
             "LambdaShutdownTargetGroup",
-            target_group_name="LambdaShutdownTargetGroup",
             vpc=vpc,
             target_type=elbv2.TargetType.LAMBDA,
             targets=[targets.LambdaTarget(shutdown_lambda)]
@@ -574,7 +565,6 @@ class ComfyUIStack(Stack):
         lambda_scaleup_target_group = elbv2.ApplicationTargetGroup(
             self,
             "LambdaScaleupTargetGroup",
-            target_group_name="LambdaScaleupTargetGroup",
             vpc=vpc,
             target_type=elbv2.TargetType.LAMBDA,
             targets=[targets.LambdaTarget(scaleup_trigger_lambda)]
@@ -605,13 +595,21 @@ class ComfyUIStack(Stack):
             )
         else:
             # Add self-signed certificate to the Load Balancer to support https
-            cert_function = lambda_python.PythonFunction(
+            cert_function = lambda_.Function(
                 self,
                 "RegisterSelfSignedCert",
-                entry="./comfyui_aws_stack/cert_lambda",
-                index="function.py",
-                handler="lambda_handler",
-                runtime=lambda_.Runtime.PYTHON_3_12,
+                handler="function.lambda_handler",
+                code=lambda_.Code.from_asset("./comfyui_aws_stack/cert_lambda", bundling=BundlingOptions(
+                    image=lambda_.Runtime.PYTHON_3_10.bundling_image,
+                    command=[
+                        "bash",
+                        "-c",
+                        "pip install -r requirements.txt -t /asset-output --platform manylinux_2_12_x86_64 --only-binary=:all: && cp -au . /asset-output",
+                    ],
+                    platform="linux/amd64",
+                    network="sagemaker" if is_sagemaker_studio else None
+                )),
+                runtime=lambda_.Runtime.PYTHON_3_10,
                 timeout=Duration.seconds(amount=120),
             )
             cert_function.add_to_role_policy(
@@ -704,7 +702,6 @@ class ComfyUIStack(Stack):
         # Create an app client that the ALB can use for authentication
         user_pool_client = user_pool.add_client(
             "alb-app-client",
-            user_pool_client_name="AlbAuthentication",
             generate_secret=True,
             o_auth=cognito.OAuthSettings(
                 callback_urls=[
