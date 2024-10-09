@@ -2,6 +2,7 @@ import json
 import boto3
 import os
 
+
 def handler(event, context):
 
     asg_name = os.environ.get("ASG_NAME")

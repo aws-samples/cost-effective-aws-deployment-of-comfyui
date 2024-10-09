@@ -1,6 +1,7 @@
 import boto3
 import os
 
+
 def handler(event, context):
     asg_name = os.environ.get("ASG_NAME")
     ecs_cluster_name = os.environ.get("ECS_CLUSTER_NAME")
@@ -12,8 +13,10 @@ def handler(event, context):
 
     try:
         # Get ASG and ECS status
-        asg_response = asg_client.describe_auto_scaling_groups(AutoScalingGroupNames=[asg_name])
-        ecs_response = ecs_client.describe_services(cluster=ecs_cluster_name, services=[ecs_service_name])
+        asg_response = asg_client.describe_auto_scaling_groups(
+            AutoScalingGroupNames=[asg_name])
+        ecs_response = ecs_client.describe_services(
+            cluster=ecs_cluster_name, services=[ecs_service_name])
 
         desired_capacity = asg_response['AutoScalingGroups'][0]['DesiredCapacity']
         running_tasks_count = ecs_response['services'][0]['runningCount']
@@ -64,7 +67,8 @@ def handler(event, context):
         </div>
         """ if display_scaleup else ""
 
-        status_html = "<p>{}</p>".format(status_message) if status_message else ""
+        status_html = "<p>{}</p>".format(
+            status_message) if status_message else ""
 
         # Full HTML Content
         html = f"""

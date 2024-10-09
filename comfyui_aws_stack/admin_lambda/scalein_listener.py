@@ -2,6 +2,7 @@ import json
 import boto3
 import os
 
+
 def handler(event, context):
 
     client = boto3.client('autoscaling')
@@ -30,7 +31,7 @@ def handler(event, context):
                 Conditions=[
                     {
                         'Field': 'path-pattern',
-                        'Values': ['/','/admin']
+                        'Values': ['/', '/admin']
                     }
                 ]
             )
