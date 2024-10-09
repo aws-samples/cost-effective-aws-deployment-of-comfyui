@@ -183,7 +183,6 @@ class ComfyUIStack(Stack):
         launchTemplate = ec2.LaunchTemplate(
             self,
             "Host",
-            instance_type=ec2.InstanceType("g4dn.2xlarge"),
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(
                 hardware_type=ecs.AmiHardwareType.GPU
             ),
@@ -214,6 +213,12 @@ class ComfyUIStack(Stack):
                 ),
                 launch_template=launchTemplate,
                 launch_template_overrides=[
+                    autoscaling.LaunchTemplateOverrides(
+                        instance_type=ec2.InstanceType("g4dn.xlarge")),
+                    autoscaling.LaunchTemplateOverrides(
+                        instance_type=ec2.InstanceType("g5.xlarge")),
+                    autoscaling.LaunchTemplateOverrides(
+                        instance_type=ec2.InstanceType("g6.xlarge")),
                     autoscaling.LaunchTemplateOverrides(
                         instance_type=ec2.InstanceType("g4dn.2xlarge")),
                     autoscaling.LaunchTemplateOverrides(
@@ -370,8 +375,7 @@ class ComfyUIStack(Stack):
             image=ecs.ContainerImage.from_ecr_repository(
                 ecr_repository, "latest"),
             gpu_count=1,
-            memory_reservation_mib=30720,
-            cpu=7680,
+            memory_reservation_mib=15000,
             logging=ecs.LogDriver.aws_logs(
                 stream_prefix="comfy-ui", log_group=log_group),
             health_check=ecs.HealthCheck(

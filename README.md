@@ -216,6 +216,7 @@ With our comprehensive Deploy Options, you have the power to craft a tailored so
     - [How to Change Values in cdk.json](docs/DEPLOY_OPTION.md#how-to-change-values-in-cdkjson)
 - [Security Related Settings](docs/DEPLOY_OPTION.md#security-related-settings)
     - [Enable Self Sign-Up](docs/DEPLOY_OPTION.md#enable-self-sign-up)
+    - [Enable MFA](docs/DEPLOY_OPTION.md#enable-mfa)
     - [Restrict the email address domains that can sign up](docs/DEPLOY_OPTION.md#restrict-the-email-address-domains-that-can-sign-up)
     - [Enable AWS WAF restrictions](docs/DEPLOY_OPTION.md#enable-aws-waf-restrictions)
         - [IP address restrictions](docs/DEPLOY_OPTION.md#ip-address-restrictions)
@@ -265,48 +266,57 @@ cdk destroy
 - Press delete
 - Type delete to confirm deletion
 
-## Notes and additional Information
+Here's an improved version of the "Notes and additional Information" section with better formatting, clarity, and organization:
 
-### Cost considerations
+## Notes and Additional Information
 
-❗ These cost indicators are only raw estimations. Feel free to refine them for your project / use case.  
+This section provides cost estimations for running the application on AWS. Please note that these are rough estimations, and you should refine them based on your project's specific requirements and usage patterns.
 
-Without any cost optimization the stack will incur approximately following costs per month.  
-For the calcuation following conditions were used:
+### Cost Estimation
 
-- Included nothing from the free tier
-- Instance Type ```g4dn.2xlarge with 8 vCPU 32 GiB memory and 1 Nvidia T4 tensor core``` on-demand pricing
-- 250 GB SSD storage with daily snapshots
-- 1x Application Load Balancer
-- VPC with 50 GB of data processed per Nat Gateway per month
-- ECR with 10gb stored per month
-- Logs with 5GB of logging data per month
+#### Flexible Workload (Default)
 
-| Service \ Runtime  | 2 hours a day | 8 hours a day | 12 hours a day | 24/7          |
-|--------------------|---------------|---------------|----------------|---------------|
-| Compute            | $45           | $183          | $275           | $550          |
-| Storage            | -             | -             | -              | $35           |
-| ALB                | -             | -             | -              | $20           |
-| Networking         | -             | -             | -              | $70           |
-| Registry           | -             | -             | -              | $1            |
-| Logging            | -             | -             | -              | $3            |
+For non-critical business workloads, which should apply to the majority of applications of this type, you can use Spot Instances to benefit from cost savings. Spot Instances offer an average historical discount of 71% (us-east-1, October 2024) for the `g4dn.xlarge` instance type. Additionally, you can replace the NAT Gateway with a NAT Instance to further reduce costs.
 
+The following assumptions are made for the cost estimation:
 
-With a little bit of optimization you achieve following costs:
+- No services from the AWS Free Tier are included.
+- Instance Type: `g4dn.xlarge` with 4 vCPU, 16 GiB memory, and 1 Nvidia T4 Tensor Core GPU (Spot Instance with 71% discount).
+- 250 GB SSD storage.
+- 1 Application Load Balancer.
+- VPC with NAT Instance.
+- Elastic Container Registry (ECR) with 10 GB of data stored per month.
+- 5 GB of logging data per month.
 
-ℹ️ For non-critical business workload (should apply to the majority of applications of this type) you can go with Spot Instances, which would lead to an average historical discount of 62% (Jul 2024) for g4dn.2xlarge. No Snapshot needed for storage for ephermal data. Replace NAT Gateway by NAT Instance.
+| Service \ Runtime  | 2h/day Mon-Fri | 8h/day Mon-Fri | 12h/day Mon-Fri | 24/7          |
+|--------------------|----------------|----------------|-----------------|---------------|
+| Compute            | $7             | $26            | $40             | $111          |
+| Storage            | -              | -              | -               | $20           |
+| ALB                | -              | -              | -               | $20           |
+| Networking         | -              | -              | -               | $6            |
+| Registry           | -              | -              | -               | $1            |
+| Logging            | -              | -              | -               | $3            |
+| Total              | $60            | $79            | $93             | $164          |
 
-| Service \ Runtime  | 2 hours a day | 8 hours a day | 12 hours a day | 24/7          |
-|--------------------|---------------|---------------|----------------|---------------|
-| Compute            | $17           | $69           | $104           | $208          |
-| Storage            | -             | -             | -              | $20           |
-| ALB                | -             | -             | -              | $20           |
-| Networking         | -             | -             | -              | $6            |
-| Registry           | -             | -             | -              | $1            |
-| Logging            | -             | -             | -              | $3            |
+#### Business-Critical Workload
 
-Additionally you could also change the instance type to other GPU Instances with less cpu and memory.
+For business-critical workloads, you can use On-Demand instances and a NAT Gateway for high availability.
 
+The following assumptions are made for the cost estimation:
+
+- Instance Type: `g4dn.xlarge` with 4 vCPU, 16 GiB memory, and 1 Nvidia T4 Tensor Core GPU (On-Demand pricing).
+- VPC with 50 GB of data processed per NAT Gateway per month.
+- Other assumptions are the same as the Flexible Workload scenario.
+
+| Service \ Runtime  | 2h/day Mon-Fri | 8h/day Mon-Fri | 12h/day Mon-Fri | 24/7          |
+|--------------------|----------------|----------------|-----------------|---------------|
+| Compute            | $23            | $91            | $137            | $384          |
+| Storage            | -              | -              | -               | $20           |
+| ALB                | -              | -              | -               | $20           |
+| Networking         | -              | -              | -               | $70           |
+| Registry           | -              | -              | -               | $1            |
+| Logging            | -              | -              | -               | $3            |
+| Total              | $137           | $205           | $251            | $498          |
 
 ### CDK Useful Commands
 

@@ -31,6 +31,21 @@ Set `selfSignUpEnabled` to `true` in the context. (The default is `false`)
 }
 ```
 
+### Enable MFA
+
+You may force user to use MFA.
+
+Set `mfaRequired` to `true` in the context. (The default is `false`)
+
+**Edit [cdk.json](/cdk.json)**
+```
+{
+  "context": {
+    "mfaRequired": true,
+  }
+}
+```
+
 ### Restrict the email address domains that can sign up
 
 You can specify a list of allowed domains in the allowedSignUpEmailDomains context (default is `null`).
