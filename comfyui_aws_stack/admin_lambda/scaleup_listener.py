@@ -2,6 +2,7 @@ import json
 import boto3
 import os
 
+
 def handler(event, context):
 
     scaling_client = boto3.client('autoscaling')

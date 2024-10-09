@@ -1,6 +1,7 @@
 import boto3
 import os
 
+
 def send_docker_restart_command(instance_id):
     ssm_client = boto3.client('ssm')
     command = "sudo systemctl restart docker"
@@ -10,6 +11,7 @@ def send_docker_restart_command(instance_id):
         Parameters={'commands': [command]}
     )
     return response['Command']['CommandId']
+
 
 def handler(event, context):
 
@@ -40,14 +42,14 @@ def handler(event, context):
                 # Assuming max capacity of 1, get the first instance ID
                 if instances:
                     instance_id = instances[0]['InstanceId']
-                    command_id = send_docker_restart_command(instance_id)      
+                    command_id = send_docker_restart_command(instance_id)
                     # Update the listener rule to redirect to the admin page per default
                     elbv2_client.modify_rule(
                         RuleArn=listener_rule_arn,
                         Conditions=[
                             {
                                 'Field': 'path-pattern',
-                                'Values': ['/','/admin']
+                                'Values': ['/', '/admin']
                             }
                         ]
                     )
