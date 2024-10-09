@@ -18,6 +18,7 @@ RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH
+RUN mkdir -p /home/user/opt/ComfyUI && chown -R user /home/user/opt/ComfyUI
 
 # Pyenv and Python setup
 RUN curl https://pyenv.run | bash
