@@ -1,5 +1,5 @@
 # 1. SSM into EC2
-aws ssm start-session --target "$(aws ec2 describe-instances --filters "Name=tag:Name,Values=ComfyUIStack/ASG" "Name=instance-state-name,Values=running" --query 'Reservations[*].Instances[*].[InstanceId]' --output text)" --region $AWS_DEFAULT_REGION
+aws ssm start-session --target "$(aws ec2 describe-instances --filters "Name=tag:Name,Values=ComfyUIStack/Host" "Name=instance-state-name,Values=running" --query 'Reservations[*].Instances[*].[InstanceId]' --output text)" --region $AWS_DEFAULT_REGION
 
 # 2. SSH into Container
 container_id=$(sudo docker container ls --format '{{.ID}} {{.Image}}' | grep 'comfyui:latest$' | awk '{print $1}')
@@ -7,7 +7,7 @@ sudo docker exec -it $container_id /bin/bash
 
 # 3. install models, loras, controlnets or whatever you need (you can also include all in a script and execute it to install)
 
-SDXL 1.0
+# SDXL 1.0
 wget -c https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors -P ./models/checkpoints/ 
 
 # SDXL Video

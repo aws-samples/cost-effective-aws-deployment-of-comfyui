@@ -8,6 +8,7 @@ import boto3
 
 acm = boto3.client("acm")
 
+
 def lambda_handler(event, context):
     """
     Lambda function handler that implements the actions when CloudFormation
@@ -21,11 +22,11 @@ def lambda_handler(event, context):
         cert = generate_certificate(**props)
         cert_arn = register_certificate_in_acm(cert=cert, stack_id=stack_id)
     elif request_type == "Update":
-        # Deletes and regenerates a self-signed certificate
+        #  Deletes and regenerates a self-signed certificate
         cert_arn = delete_certificate(event["PhysicalResourceId"])
         cert = generate_certificate(**props)
         cert_arn = register_certificate_in_acm(cert=cert, stack_id=stack_id)
-    else: # Delete
+    else:  # Delete
         cert_arn = delete_certificate(event["PhysicalResourceId"])
 
     output = {
@@ -37,17 +38,18 @@ def lambda_handler(event, context):
 
     return output
 
+
 def generate_certificate(
-        email_address,
-        common_name,
-        country_code,
-        city,
-        state,
-        organization,
-        organizational_unit,
-        validity_seconds: int=5*365*24*60*60, # Five years validity
-        **kwargs
-    ):
+    email_address,
+    common_name,
+    country_code,
+    city,
+    state,
+    organization,
+    organizational_unit,
+    validity_seconds: int = 5*365*24*60*60,  # Five years validity
+    **kwargs
+):
     """
     Generates a self-signed x509 certificate with a random serial number.
     Returns the private key and certificate as byte arrays.
@@ -77,6 +79,7 @@ def generate_certificate(
         "certificate": crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8")
     }
 
+
 def register_certificate_in_acm(cert, stack_id):
     """
     Registers the input x509 certificate into ACM and returns its ARN
@@ -96,6 +99,7 @@ def register_certificate_in_acm(cert, stack_id):
     )
 
     return result['CertificateArn']
+
 
 def delete_certificate(cert_arn):
     """
