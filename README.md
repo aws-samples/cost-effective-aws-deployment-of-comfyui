@@ -96,8 +96,10 @@ When prompted, enter your AWS Access Key ID, Secret Access Key, and then the def
 3. You can change the used AWS account and region by setting the env variables below. These variables will be used in many of the commands below.
 
 ```bash
-echo "export AWS_DEFAULT_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)"
-echo "export AWS_DEFAULT_REGION=$(aws configure get region)"
+export AWS_DEFAULT_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+export AWS_DEFAULT_REGION=$(aws configure get region)
+echo $AWS_DEFAULT_ACCOUNT
+echo $AWS_DEFAULT_REGION
 
 # alternatively: export AWS_DEFAULT_ACCOUNT=<your_account_id> # e.g. 123456789012
 # alternatively: export AWS_DEFAULT_REGION=<aws_region> # e.g. "us-east-1", "eu-central-1"
@@ -270,9 +272,9 @@ Here's an improved version of the "Notes and additional Information" section wit
 
 ## Notes and Additional Information
 
-This section provides cost estimations for running the application on AWS. Please note that these are rough estimations, and you should refine them based on your project's specific requirements and usage patterns.
-
 ### Cost Estimation
+
+This section provides cost estimations for running the application on AWS. Please note that these are rough estimations, and you should refine them based on your project's specific requirements and usage patterns.
 
 #### Flexible Workload (Default)
 
@@ -296,7 +298,7 @@ The following assumptions are made for the cost estimation:
 | Networking         | -              | -              | -               | $6            |
 | Registry           | -              | -              | -               | $1            |
 | Logging            | -              | -              | -               | $3            |
-| Total              | $60            | $79            | $93             | $164          |
+| Total Monthly Cost | $60            | $79            | $93             | $164          |
 
 #### Business-Critical Workload
 
@@ -316,7 +318,7 @@ The following assumptions are made for the cost estimation:
 | Networking         | -              | -              | -               | $70           |
 | Registry           | -              | -              | -               | $1            |
 | Logging            | -              | -              | -               | $3            |
-| Total              | $137           | $205           | $251            | $498          |
+| Total Monthly Cost | $137           | $205           | $251            | $498          |
 
 ### CDK Useful Commands
 
