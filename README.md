@@ -27,7 +27,6 @@ This sample repository provides a seamless and cost-effective solution to deploy
 - **[ECS Task Definition](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html)** - Defines the ComfyUI container and mounts EBS volume for persistence
 - **[ECS Service](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_services.html)** - Creates an ECS service to run the ComfyUI task definition
 - **[Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html)** - An ALB is setup to route traffic to the ECS service 
-- **[Log Bucket](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html)** - An S3 bucket stores ALB access logs 
 - **[Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html)** - Holds the ComfyUI Docker image
 - **[CloudWatch Log Group](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html)** - Stores logs from the ECS task
 - **[Amazon Cognito](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html)** - User directory for having authentication in front of the ALB
@@ -96,13 +95,8 @@ When prompted, enter your AWS Access Key ID, Secret Access Key, and then the def
 3. You can change the used AWS account and region by setting the env variables below. These variables will be used in many of the commands below.
 
 ```bash
-export AWS_DEFAULT_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
-export AWS_DEFAULT_REGION=$(aws configure get region)
-echo $AWS_DEFAULT_ACCOUNT
-echo $AWS_DEFAULT_REGION
-
-# alternatively: export AWS_DEFAULT_ACCOUNT=<your_account_id> # e.g. 123456789012
-# alternatively: export AWS_DEFAULT_REGION=<aws_region> # e.g. "us-east-1", "eu-central-1"
+export AWS_DEFAULT_ACCOUNT=<your_account_id> # e.g. 123456789012
+export AWS_DEFAULT_REGION=<aws_region> # e.g. "us-east-1", "eu-central-1"
 ```
 
 ### Build & push docker image to ECR
@@ -267,8 +261,6 @@ cdk destroy
 - Select comfyui
 - Press delete
 - Type delete to confirm deletion
-
-Here's an improved version of the "Notes and additional Information" section with better formatting, clarity, and organization:
 
 ## Notes and Additional Information
 
