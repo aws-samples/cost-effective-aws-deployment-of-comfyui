@@ -444,10 +444,6 @@ class ComfyUIStack(Stack):
             security_groups=[service_security_group],
             health_check_grace_period=Duration.seconds(30),
             min_healthy_percent=0,
-            circuit_breaker=ecs.DeploymentCircuitBreaker(
-                enable=True,
-                rollback=True
-            )
         )
 
         # Application Load Balancer
