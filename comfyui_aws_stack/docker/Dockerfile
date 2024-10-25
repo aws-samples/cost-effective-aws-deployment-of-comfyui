@@ -23,7 +23,7 @@ RUN mkdir -p /home/user/opt/ComfyUI && chown -R user /home/user/opt/ComfyUI
 # Pyenv and Python setup
 RUN curl https://pyenv.run | bash
 ENV PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
-ARG PYTHON_VERSION=3.10.12
+ENV PYTHON_VERSION=3.10.12
 RUN pyenv install $PYTHON_VERSION && \
     pyenv global $PYTHON_VERSION && \
     pyenv rehash && \

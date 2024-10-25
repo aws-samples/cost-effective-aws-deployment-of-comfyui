@@ -88,55 +88,19 @@ When prompted, enter your AWS Access Key ID, Secret Access Key, and then the def
     ```
 </details>
 
-### Setup environment
+### Deploying ComfyUI
 
 1. (First time only) Clone this repo
 2. (First time only) cd into repo directory
-3. You can change the used AWS account and region by setting the env variables below. These variables will be used in many of the commands below.
-
-```bash
-export AWS_DEFAULT_ACCOUNT=<your_account_id> # e.g. 123456789012
-export AWS_DEFAULT_REGION=<aws_region> # e.g. "us-east-1", "eu-central-1"
-```
-
-### Build & push docker image to ECR
-
-You could build & reference your docker image in CDK directly, but we're using docker build and push the image to ECR, that we don't need to build the docker image with every CDK deployment. Additionally, the image is getting scanned
-for vulnerabilites as soon as you push the image to ECR. You can achieve this as following:
-
-1. Create an ECR repository and login
-```
-aws ecr create-repository --repository-name comfyui --image-scanning-configuration scanOnPush=true
-```
-2. Login to ECR
-```
-aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_DEFAULT_ACCOUNT.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/comfyui
-```
-3. Build docker image (make sure you're in the same directory as your dockerfile)
-```
-docker build -t comfyui .
-# or alternatively if you are using M1 / M2 / ... Mac
-docker build --platform linux/amd64 -t comfyui .
-# or alternatively if you are using SageMaker Studio Code Editor
-docker build -t comfyui . --network sagemaker
-```
-4. Tag and push docker image to ECR
-```
-docker tag comfyui:latest $AWS_DEFAULT_ACCOUNT.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/comfyui:latest
-docker push $AWS_DEFAULT_ACCOUNT.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/comfyui:latest
-```
-
-### Deploying ComfyUI
-
-1. (First time only) Install Required Dependency
+3. (First time only) Install Required Dependency
 ```python
 python -m pip install -r requirements.txt
 ```
-2. (First time only) If you use CDK in your first time in an account/region, then you need to run following command to bootstrap your account. For subsequent deployments this step is not required anymore
+4. (First time only) If you use CDK in your first time in an account/region, then you need to run following command to bootstrap your account. For subsequent deployments this step is not required anymore
 ```bash
 cdk bootstrap
 ```
-3. Deploy ComfyUI to your default AWS account and region
+5. Deploy ComfyUI to your default AWS account and region
 ```bash
 cdk deploy
 ```
