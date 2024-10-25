@@ -2,6 +2,7 @@ from aws_cdk import (
     aws_ecs as ecs,
     aws_ec2 as ec2,
     aws_ecr as ecr,
+    aws_ecr_assets as ecr_assets,
     aws_logs as logs,
     aws_s3 as s3,
     aws_iam as iam,
@@ -334,10 +335,13 @@ class ComfyUIStack(Stack):
         )
 
         # ECR Repository
-        ecr_repository = ecr.Repository.from_repository_name(
+        docker_image_asset = ecr_assets.DockerImageAsset(
             self,
-            "comfyui",
-            "comfyui")
+            "ComfyUIImage",
+            directory="comfyui_aws_stack/docker",
+            platform=ecr_assets.Platform.LINUX_AMD64,
+            network_mode="sagemaker" if is_sagemaker_studio else None
+        )
 
         # CloudWatch Logs Group
         log_group = logs.LogGroup(
@@ -373,7 +377,9 @@ class ComfyUIStack(Stack):
         container = task_definition.add_container(
             "ComfyUIContainer",
             image=ecs.ContainerImage.from_ecr_repository(
-                ecr_repository, "latest"),
+                docker_image_asset.repository,
+                docker_image_asset.image_tag
+            ),
             gpu_count=1,
             memory_reservation_mib=15000,
             logging=ecs.LogDriver.aws_logs(
