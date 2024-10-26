@@ -1015,6 +1015,39 @@ class ComfyUIStack(Stack):
                 web_acl_arn=waf.attr_arn,
             )
 
+        # Post Deploy fix
+        post_process_function = lambda_.Function(
+            self,
+            "UpdateCognitoCallbackUrlFunction",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            code=lambda_.Code.from_asset(
+                "./comfyui_aws_stack/post_process_lambda"),
+            handler="function.lambda_handler",
+            environment={
+                "COGNITO_USER_POOL_ID": user_pool.user_pool_id,
+                "COGNITO_CLIENT_ID": user_pool_client.user_pool_client_id,
+            },
+        )
+        post_process_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "cognito-idp:DescribeUserPoolClient",
+                    "cognito-idp:UpdateUserPoolClient",
+                ],
+                resources=["*"],
+            )
+        )
+        post_process_provider = cr.Provider(
+            self, "UpdateCognitoCallbackUrlProvider",
+            on_event_handler=post_process_function,
+        )
+        CustomResource(
+            self, "UpdateCognitoCallbackUrl",
+            service_token=post_process_provider.service_token,
+        )
+
+        # Nag
+
         NagSuppressions.add_resource_suppressions(
             [alb_security_group, asg_security_group, service_security_group, alb],
             suppressions=[

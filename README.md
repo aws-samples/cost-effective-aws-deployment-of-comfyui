@@ -145,15 +145,9 @@ wget -c https://huggingface.co/ai-forever/Real-ESRGAN/blob/main/RealESRGAN_x2.pt
 
 ### Access ComfyUI
 
-The deployed solution provides an EC2 accessible through an Application Load Balancer. The Load Balancer requires authentication through Amazon Cognito User Pool. To create the admin user (and apply a post-deployment fix related to upper case letters in the Load Balancer URL) you will need to run a script before to proceed. The password is contained in the variable `user_password` and `should` be customized before to run the script.  
+The deployed solution provides an EC2 accessible through an Application Load Balancer. The Load Balancer requires authentication through Amazon Cognito User Pool. 
 
-❗ Update the user_password variable before running the script  
-
-```python
-python scripts/cognito_post_deploy_fix.py
-```
-
-Or alternatively you may enable self-signup / SAML authentication / manually create user in Cognito console.
+You may [enable self-signup](docs/DEPLOY_OPTION.md#enable-self-sign-up), enable [SAML authentication](docs/DEPLOY_OPTION.md#saml-authentication), or manually create user in Cognito console.
 
 ### User Guide
 
