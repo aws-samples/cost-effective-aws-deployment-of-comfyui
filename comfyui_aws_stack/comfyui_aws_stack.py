@@ -340,7 +340,8 @@ class ComfyUIStack(Stack):
             "ComfyUIImage",
             directory="comfyui_aws_stack/docker",
             platform=ecr_assets.Platform.LINUX_AMD64,
-            network_mode="sagemaker" if is_sagemaker_studio else None
+            network_mode=ecr_assets.NetworkMode.custom(
+                "sagemaker") if is_sagemaker_studio else None
         )
 
         # CloudWatch Logs Group
