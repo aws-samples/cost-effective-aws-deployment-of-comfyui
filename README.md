@@ -39,7 +39,7 @@ This sample repository provides a seamless and cost-effective solution to deploy
 
 For the sake of reproducability and consistency, we recommend using [Amazon SageMaker Studio Code Editor](https://docs.aws.amazon.com/sagemaker/latest/dg/code-editor.html) for deploying and testing this solution.
 
-ℹ️ You can use your local development environment, but you will need to **make sure that you have AWS CLI, AWS CDK and Docker properly setup**. Additionally, if you're building your docker image using apple chips (M1, M2, etc.) then you need to use the Docker ```docker build --platform linux/amd64 .``` command.
+ℹ️ You can use your local development environment, but you will need to **make sure that you have AWS CLI, AWS CDK and Docker properly setup**.
 
 <details>
 <summary>Click to see environment estup with Amazon SageMaker Studio Code Editor</summary>
@@ -47,7 +47,6 @@ For the sake of reproducability and consistency, we recommend using [Amazon Sage
 1. Launch Amazon SageMaker Studio Code Editor using CloudFormation template from link in [sagemaker-studio-code-editor-template](https://github.com/aws-samples/sagemaker-studio-code-editor-template/). (This template launches Code Editor with some necessary capabilities including Docker, auto termination)
 2. Open SageMaker Studio from url in CloudFormation Output.
 3. Navigate to Code Editor from Application section in top left.
-4. Install CDK by `npm install -g aws-cdk`
 </details>
 
 <details>
@@ -68,41 +67,21 @@ aws configure
 When prompted, enter your AWS Access Key ID, Secret Access Key, and then the default region name (eg. us-east-1). You can leave the output format field as default or specify it as per your preference.
 </details>
 
-<details>
-<summary>(Deprecated) Click to see environment setup with Cloud9</summary>
-
-1. Login to AWS Console
-2. Navigate to Cloud9
-3. Create Environment with following example details:
-    - Name: Give your Dev Environment a name of choice
-    - Instance Type: t2.micro (default) got a free-tier
-    - Platform: Ubuntu Server 22.04 LTS
-    - Timeout: 30 minutes
-    - Other settings can be configured with the default values
-4. Create and open environment
-5. resize disk space
-    ```bash
-    curl -o resize.sh https://raw.githubusercontent.com/aws-samples/semantic-search-aws-docs/main/cloud9/resize.sh
-    chmod +x ./resize.sh
-    ./resize.sh 100
-    ```
-</details>
+> [!NOTE]
+> Make sure your account has quota for GPU instance. Go to [Service Quota](https://us-west-2.console.aws.amazon.com/servicequotas/home/services/ec2/quotas/L-3819A6DF) and set `All G and VT Spot Instance Requests` to at least 4.
 
 ### Deploying ComfyUI
 
 1. (First time only) Clone this repo
 2. (First time only) cd into repo directory
-3. (First time only) Install Required Dependency
-```python
-python -m pip install -r requirements.txt
-```
+3. (First time only) Run `npm i`
 4. (First time only) If you use CDK in your first time in an account/region, then you need to run following command to bootstrap your account. For subsequent deployments this step is not required anymore
 ```bash
-cdk bootstrap
+npm run cdk bootstrap
 ```
 5. Deploy ComfyUI to your default AWS account and region
 ```bash
-cdk deploy
+npm run cdk deploy
 ```
 
 Depending on your custom_nodes and extenstions in the dockerfile, the deployment will take approx. 8-10 minutes to have ComfyUI ready
@@ -270,14 +249,15 @@ The following assumptions are made for the cost estimation:
 | Logging            | -              | -              | -               | $3            |
 | Total Monthly Cost | $137           | $205           | $251            | $498          |
 
-### CDK Useful Commands
+### Useful Commands
 
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk destroy`     destroy the deployed stack in your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
+* `npm run cdk ls`          list all stacks in the app
+* `npm run cdk synth`       emits the synthesized CloudFormation template
+* `npm run cdk deploy`      deploy this stack to your default AWS account/region
+* `npm run cdk destroy`     destroy the deployed stack in your default AWS account/region
+* `npm run cdk diff`        compare deployed stack with current state
+* `npm run cdk docs`        open CDK documentation
+* `npm run test`            Run test
 
 ## Q&A
 
