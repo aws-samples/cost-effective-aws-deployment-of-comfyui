@@ -39,7 +39,7 @@ This sample repository provides a seamless and cost-effective solution to deploy
 
 For the sake of reproducability and consistency, we recommend using [Amazon SageMaker Studio Code Editor](https://docs.aws.amazon.com/sagemaker/latest/dg/code-editor.html) for deploying and testing this solution.
 
-ℹ️ You can use your local development environment, but you will need to **make sure that you have AWS CLI, AWS CDK and Docker properly setup**. Additionally, if you're building your docker image using apple chips (M1, M2, etc.) then you need to use the Docker ```docker build --platform linux/amd64 .``` command.
+ℹ️ You can use your local development environment, but you will need to **make sure that you have AWS CLI, AWS CDK and Docker properly setup**.
 
 <details>
 <summary>Click to see environment estup with Amazon SageMaker Studio Code Editor</summary>
