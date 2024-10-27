@@ -1,59 +1,12 @@
-*.swp
-package-lock.json
-__pycache__
-.pytest_cache
-.venv
-*.egg-info
+*.js
+!jest.config.js
+*.d.ts
+node_modules
 
 # CDK asset staging directory
 .cdk.staging
 cdk.out
-cfn.yaml
-dockerfile_*
-comfyui_aws_stack/comfy_ui_aws_example_stack_https.py
-comfyui_config/provisioning.sh
 cdk.context.json
-comfyui_aws_stack/comfyui-instructions
-comfyui_models
-tmp
-comfyui_aws_stack/temp.py
-comfyui_aws_stack/index.html
 
-# Folder view configuration files
 .DS_Store
-Desktop.ini
-
-# Thumbnail cache files
-._*
-Thumbs.db
-
-# Files that might appear on external disks
-.Spotlight-V100
-.Trashes
-
-# Compiled Python files
-*.pyc
-
-# Compiled C++ files
-*.out
-
-# Application specific files
-venv
-node_modules
-.sass-cache
-
-# Temp File
-*.swp
-*.swa
-*.swo
-
-# github merge file
-*.orig
-
-#vscode 
 .vscode
-
-.bandit.yaml
-bandit-env/
-bandit_output.txt
-cfn_nagged.yaml
