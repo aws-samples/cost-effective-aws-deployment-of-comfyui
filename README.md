@@ -67,6 +67,9 @@ aws configure
 When prompted, enter your AWS Access Key ID, Secret Access Key, and then the default region name (eg. us-east-1). You can leave the output format field as default or specify it as per your preference.
 </details>
 
+> [!NOTE]
+> Make sure your account has quota for GPU instance. Go to [Service Quota](https://us-west-2.console.aws.amazon.com/servicequotas/home/services/ec2/quotas/L-3819A6DF) and set `All G and VT Spot Instance Requests` to at least 4.
+
 ### Deploying ComfyUI
 
 1. (First time only) Clone this repo
