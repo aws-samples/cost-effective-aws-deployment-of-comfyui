@@ -491,7 +491,7 @@ class ComfyUIStack(Stack):
             self,
             "AdminFunction",
             handler="admin.handler",
-            code=lambda_.Code.from_asset("./comfyui_aws_stack/admin_lambda"),
+            code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/admin_lambda"),
             role=lambda_role,
             runtime=lambda_.Runtime.PYTHON_3_12,
             timeout=Duration.seconds(amount=60)
@@ -501,7 +501,7 @@ class ComfyUIStack(Stack):
             self,
             "RestartDockerFunction",
             handler="restart_docker.handler",
-            code=lambda_.Code.from_asset("./comfyui_aws_stack/admin_lambda"),
+            code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/admin_lambda"),
             role=lambda_role,
             runtime=lambda_.Runtime.PYTHON_3_12,
             timeout=Duration.seconds(amount=60)
@@ -511,7 +511,7 @@ class ComfyUIStack(Stack):
             self,
             "ShutdownFunction",
             handler="shutdown.handler",
-            code=lambda_.Code.from_asset("./comfyui_aws_stack/admin_lambda"),
+            code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/admin_lambda"),
             role=lambda_role,
             runtime=lambda_.Runtime.PYTHON_3_12,
             timeout=Duration.seconds(amount=60)
@@ -523,7 +523,7 @@ class ComfyUIStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_12,
             role=lambda_role,
             handler="scaleup_trigger.handler",
-            code=lambda_.Code.from_asset("./comfyui_aws_stack/admin_lambda"),
+            code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/admin_lambda"),
             timeout=Duration.seconds(amount=60)
         )
 
@@ -533,7 +533,7 @@ class ComfyUIStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_12,
             role=lambda_role,
             handler="scalein_listener.handler",
-            code=lambda_.Code.from_asset("./comfyui_aws_stack/admin_lambda"),
+            code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/admin_lambda"),
             timeout=Duration.seconds(amount=60)
         )
 
@@ -543,7 +543,7 @@ class ComfyUIStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_12,
             role=lambda_role,
             handler="scaleup_listener.handler",
-            code=lambda_.Code.from_asset("./comfyui_aws_stack/admin_lambda"),
+            code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/admin_lambda"),
             timeout=Duration.seconds(amount=60)
         )
 
@@ -633,7 +633,7 @@ class ComfyUIStack(Stack):
                 self,
                 "RegisterSelfSignedCert",
                 handler="function.lambda_handler",
-                code=lambda_.Code.from_asset("./comfyui_aws_stack/cert_lambda", bundling=BundlingOptions(
+                code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/cert_lambda", bundling=BundlingOptions(
                     image=lambda_.Runtime.PYTHON_3_10.bundling_image,
                     command=[
                         "bash",
@@ -787,7 +787,7 @@ class ComfyUIStack(Stack):
                 role=lambda_role,
                 handler="check_email_domain.handler",
                 code=lambda_.Code.from_asset(
-                    "./comfyui_aws_stack/auth_lambda"),
+                    "./comfyui_aws_stack/lambda/auth_lambda"),
                 timeout=Duration.seconds(amount=60),
                 environment={
                     "ALLOWED_SIGN_UP_EMAIL_DOMAINS_STR": json.dumps(allowedSignUpEmailDomains),
@@ -1021,7 +1021,7 @@ class ComfyUIStack(Stack):
             "UpdateCognitoCallbackUrlFunction",
             runtime=lambda_.Runtime.PYTHON_3_12,
             code=lambda_.Code.from_asset(
-                "./comfyui_aws_stack/post_process_lambda"),
+                "./comfyui_aws_stack/lambda/post_process_lambda"),
             handler="function.lambda_handler",
             environment={
                 "COGNITO_USER_POOL_ID": user_pool.user_pool_id,
