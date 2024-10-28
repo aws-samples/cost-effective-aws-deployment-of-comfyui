@@ -4,14 +4,14 @@
 
 This solution is configured by changing the context in AWS CDK.
 
-**While the CDK context can also be specified with '-c', we recommend to change the settings in the parameter.ts file.**
+**While the CDK context can also be specified with '-c', we recommend to change the settings in the cdk.json file.**
 
-### How to Change Values in parameter.ts
+### How to Change Values in cdk.json
 
-Change the values under the context section in [parameter.ts](/parameter.ts). For example, setting `useSpot: true` will enable the Spot Instance. After setting the context values, run the following command to re-deploy with the new settings.
+Change the values under the context section in [cdk.json](/cdk.json). For example, setting `"useSpot": true` will enable the Spot Instance. After setting the context values, run the following command to re-deploy with the new settings.
 
 ```bash
-npm run cdk deploy
+cdk deploy
 ```
 
 ## Security Related Settings
@@ -22,14 +22,13 @@ You may enable user self-signup so user can easily onboard to the application. Y
 
 Set `selfSignUpEnabled` to `true` in the context. (The default is `false`)
 
-**Edit [parameter.ts](/parameter.ts)**
-
-```typescript
-export const overrideParameter: Partial<ComfyUIStackProps> = {
-  ...
-  selfSignUpEnabled: true,
-  ...
-};
+**Edit [cdk.json](/cdk.json)**
+```
+{
+  "context": {
+    "selfSignUpEnabled": true,
+  }
+}
 ```
 
 ### Enable MFA
@@ -38,14 +37,13 @@ You may force user to use MFA.
 
 Set `mfaRequired` to `true` in the context. (The default is `false`)
 
-**Edit [parameter.ts](/parameter.ts)**
-
-```typescript
-export const overrideParameter: Partial<ComfyUIStackProps> = {
-  ...
-  mfaRequired: true,
-  ...
-};
+**Edit [cdk.json](/cdk.json)**
+```
+{
+  "context": {
+    "mfaRequired": true,
+  }
+}
 ```
 
 ### Restrict the email address domains that can sign up
@@ -58,33 +56,41 @@ If set, users with email addresses from non-allowed domains will get an error wh
 
 This setting does not affect existing users in Cognito. It only applies to new sign-ups or user creations.
 
-**Edit [parameter.ts](/parameter.ts)**
+**Edit [cdk.json](/cdk.json)**
 
 Configuration examples:
 
+- To allow sign-ups with email addresses from the `amazon.com` domain:
+
+```json
+{
+  "context": {
+    "allowedSignUpEmailDomains": ["amazon.com"] // Change from null to specify allowed domains
+  }
+}
+```
+
 - To allow sign-ups with email addresses from either `amazon.com` or `amazon.jp` domains:
 
-```typescript
-export const overrideParameter: Partial<ComfyUIStackProps> = {
-  ...
-  allowedSignUpEmailDomains: ["amazon.com", "amazon.jp"] // Change from null to specify allowed domains
-  ...
-};
+```json
+{
+  "context": {
+    "allowedSignUpEmailDomains": ["amazon.com", "amazon.jp"] // Change from null to specify allowed domains
+  }
+}
 ```
 
 ### Enable AWS WAF restrictions
 
 #### IP address restrictions
 
-To restrict access to the web application by IP address, you can enable IP restrictions using AWS WAF. In [parameter.ts](/parameter.ts), `allowedIpV4AddressRanges` allows you to specify an array of allowed IPv4 CIDR ranges, and `allowedIpV6AddressRanges` allows you to specify an array of allowed IPv6 CIDR ranges.
+To restrict access to the web application by IP address, you can enable IP restrictions using AWS WAF. In [cdk.json](/cdk.json), `allowedIpV4AddressRanges` allows you to specify an array of allowed IPv4 CIDR ranges, and `allowedIpV6AddressRanges` allows you to specify an array of allowed IPv6 CIDR ranges.
 
-```typescript
-export const overrideParameter: Partial<ComfyUIStackProps> = {
-  ...
-  allowedIpV4AddressRanges: ["192.168.0.0/24"], // Change from null to specify allowed CIDR list
-  allowedIpV6AddressRanges: ["2001:0db8::/32"], // Change from null to specify allowed CIDR list
-  ...
-};
+```json
+  "context": {
+    "allowedIpV4AddressRanges": ["192.168.0.0/24"], // Change from null to specify allowed CIDR list
+    "allowedIpV6AddressRanges": ["2001:0db8::/32"], // Change from null to specify allowed CIDR list
+  }
 ```
 
 ### SAML Authentication
@@ -94,16 +100,11 @@ You can integrate with the SAML authentication functionality provided by IdPs su
 - SAML Integration with Google Workspace
 - [SAML Integration with Microsoft Entra ID](SAML_WITH_ENTRA_ID.md)
 
-**Edit [parameter.ts](/parameter.ts)**
+**Edit [cdk.json](/cdk.json)**
 
-```typescript
-export const overrideParameter: Partial<ComfyUIStackProps> = {
-  ...
-  samlAuthEnabled: true,
-  ...
-};
+```json
+  "samlAuthEnabled": true,
 ```
-
 - samlAuthEnabled: Setting this to `true` will switch to the SAML-only authentication screen. The conventional authentication functionality using Cognito user pools will no longer be available.
 
 ## Cost-related Settings
@@ -112,13 +113,9 @@ export const overrideParameter: Partial<ComfyUIStackProps> = {
 
 You can use spot instance to reduce cost for non-critical workload. (The default is `true`) You can Set `useSpot` to `false` in the context to disable it. You may also modify `spotPrice`. Instance will be available only when spot price is below `spotPrice`.
 
-```typescript
-export const overrideParameter: Partial<ComfyUIStackProps> = {
-  ...
-  useSpot: true,
-  spotPrice: "0.752",
-  ...
-};
+```json
+    "useSpot": true,
+    "spotPrice": "0.752",
 ```
 
 ### Scale Down automatically / on schedule
@@ -127,25 +124,18 @@ You can scale down instances to zero to further reduce cost.
 
 - To automatically scale down when there is no activity for an hour, set `autoScaleDown` to `true`.
 
-```typescript
-export const overrideParameter: Partial<ComfyUIStackProps> = {
-  ...
-  autoScaleDown: true,
-  ...
-};
+```json
+    "autoScaleDown": true,
 ```
 
 - To scale down and scale up instance on schedule (i.e. work hour), set `scheduleAutoScaling` to `true`. You can specify scale up/down schedule by cron with `timezone`, `scheduleScaleUp`, and `scheduleScaleDown`.
 
-```typescript
-export const overrideParameter: Partial<ComfyUIStackProps> = {
-  ...
-  scheduleAutoScaling: true,
-  timezone: "Asia/Tokyo",
-  scheduleScaleUp: "0 9 * * 1-5",
-  scheduleScaleDown: "0 18 * * *",
-  ...
-};
+
+```json
+    "scheduleAutoScaling": true,
+    "timezone": "Asia/Tokyo",
+    "scheduleScaleUp": "0 9 * * 1-5",
+    "scheduleScaleDown": "0 18 * * *",
 ```
 
 ### Use NAT Instance instead of NAT Gateway
@@ -154,12 +144,8 @@ NAT Instance is cheaper, but have limited availability and network throughput co
 
 NAT Instance is used by default. You can change it to NAT Gateway by setting `cheapVpc` to `false`.
 
-```typescript
-export const overrideParameter: Partial<ComfyUIStackProps> = {
-  ...
-  cheapVpc: false,
-  ...
-};
+```json
+    "cheapVpc": false,
 ```
 
 ## Using a Custom Domain
@@ -168,20 +154,20 @@ You can use a custom domain as the URL for your website. You must have a public 
 
 If you don't have a public hosted zone under the same AWS account, you can also use manual DNS record addition or email validation during SSL certificate validation with AWS ACM. If you use these methods, please refer to the CDK documentation and customize accordingly: [aws-cdk-lib.aws_certificatemanager module · AWS CDK](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_certificatemanager-readme.html)
 
-Set the following values in parameter.ts:
+Set the following values in cdk.json:
 
 - `hostName` ... The hostname for your website. The A record will be created by CDK, no need to create it beforehand
 - `domainName` ... The domain name of the pre-created public hosted zone
 - `hostedZoneId` ... The ID of the pre-created public hosted zone
 
-**Edit [parameter.ts](/parameter.ts)**
+**Edit [cdk.json](/cdk.json)**
 
-```typescript
-export const overrideParameter: Partial<ComfyUIStackProps> = {
-  ...
-  hostName: "comfyui",
-  domainName: "example.com",
-  hostedZoneId: "XXXXXXXXXXXXXXXXXXXX"
-  ...
-};
+```json
+{
+  "context": {
+    "hostName": "comfyui",
+    "domainName": "example.com",
+    "hostedZoneId": "XXXXXXXXXXXXXXXXXXXX"
+  }
+}
 ```

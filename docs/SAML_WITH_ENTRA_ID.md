@@ -140,18 +140,16 @@ Select EntraID as the Identity Provider. Also, uncheck the Cognito user pool che
 
 Select Save changes.
 
-## Editing `parameter.ts`
+## Editing cdk.json
 
-Since the configuration is now complete, we will change the values in parameter.ts.
+Since the configuration is now complete, we will change the values in cdk.json.
 
 - samlAuthEnabled: Set to `true`. This will switch to the SAML-only authentication screen, and the conventional authentication function using Cognito user pools will no longer be available.
 
-```typescript
-export const overrideParameter: Partial<ComfyUIStackProps> = {
-  ...
-  samlAuthEnabled: true,
-  ...
-};
+```json
+  "context": {
+　　 ...
+    "samlAuthEnabled": true,
 ```
 
 After configuration, redeploying will enable SAML integration.
