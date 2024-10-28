@@ -1,0 +1,8 @@
+{
+    "scripts": {
+        "cdk": "cdk"
+    },
+    "dependencies": {
+        "aws-cdk": "^2.164.1"
+    }
+}
