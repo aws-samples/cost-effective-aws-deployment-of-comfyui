@@ -1,3 +1,5 @@
+English | [日本語](./README_ja.md) | [中文](./README_cn.md)
+
 # ComfyUI on AWS
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -72,13 +74,13 @@ When prompted, enter your AWS Access Key ID, Secret Access Key, and then the def
 
 ### Deploying ComfyUI
 
-1. (First time only) Clone this repo
-2. (First time only) cd into repo directory
+1. (First time only) Clone this repo (`git clone https://github.com/aws-samples/cost-effective-aws-deployment-of-comfyui.git`)
+2. (First time only) cd into repo directory (`cd cost-effective-aws-deployment-of-comfyui`)
 3. Run `make`
 
 Depending on your custom_nodes and extenstions in the dockerfile, the deployment will take approx. 8-10 minutes to have ComfyUI ready
  
- ```
+```
  ✅  ComfyUIStack
 
 ✨  Deployment time: 579.07s
