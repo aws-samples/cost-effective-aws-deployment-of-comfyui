@@ -1,0 +1,12 @@
+{
+  "self_signed_certificate": {
+    "email_address": "customer@example.com",
+    "common_name": "example.com",
+    "city": ".",
+    "state": ".",
+    "country_code": "AT",
+    "organization": ".",
+    "organizational_unit": ".",
+    "validity_seconds": 157680000
+  }
+}
