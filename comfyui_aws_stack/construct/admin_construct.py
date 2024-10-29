@@ -21,7 +21,6 @@ class AdminConstruct(Construct):
     lambda_restart_docker_target_group: elbv2.ApplicationTargetGroup
     lambda_shutdown_target_group: elbv2.ApplicationTargetGroup
     lambda_scaleup_target_group: elbv2.ApplicationTargetGroup
-    lambda_role: iam.Role
 
     def __init__(
             self,
@@ -220,7 +219,6 @@ class AdminConstruct(Construct):
         self.lambda_restart_docker_target_group = lambda_restart_docker_target_group
         self.lambda_shutdown_target_group = lambda_shutdown_target_group
         self.lambda_scaleup_target_group = lambda_scaleup_target_group
-        self.lambda_role = lambda_role
 
     def add_environments(self,
                          lambda_admin_rule: elbv2.ApplicationListenerRule,

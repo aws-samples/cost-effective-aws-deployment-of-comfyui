@@ -25,7 +25,6 @@ class AuthConstruct(Construct):
             scope: Construct,
             construct_id: str,
             alb: elbv2.ApplicationLoadBalancer,
-            lambda_role: iam.Role,
             suffix: str,
             host_name: str,
             domain_name: str,
@@ -119,7 +118,6 @@ class AuthConstruct(Construct):
                 scope,
                 "checkEmailDomainFunction",
                 runtime=lambda_.Runtime.PYTHON_3_12,
-                role=lambda_role,
                 handler="check_email_domain.handler",
                 code=lambda_.Code.from_asset(
                     "./comfyui_aws_stack/lambda/auth_lambda"),

@@ -116,7 +116,6 @@ class ComfyUIStack(Stack):
         auth_construct = AuthConstruct(
             self, "AuthConstruct",
             alb=alb_construct.alb,
-            lambda_role=admin_construct.lambda_role,
             suffix=suffix,
             host_name=host_name,
             domain_name=domain_name,
