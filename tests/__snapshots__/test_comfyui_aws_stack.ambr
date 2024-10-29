@@ -27,6 +27,10 @@
         'Description': 'Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]',
         'Type': 'AWS::SSM::Parameter::Value<String>',
       }),
+      'SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61arm64C96584B6F00A464EAD1953AFF4B05118Parameter': dict({
+        'Default': '/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-arm64',
+        'Type': 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>',
+      }),
       'SsmParameterValueawsserviceecsoptimizedamiamazonlinux2gpurecommendedimageidC96584B6F00A464EAD1953AFF4B05118Parameter': dict({
         'Default': '/aws/service/ecs/optimized-ami/amazon-linux-2/gpu/recommended/image_id',
         'Type': 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>',
@@ -111,7 +115,7 @@
             'InstancesDistribution': dict({
               'OnDemandAllocationStrategy': 'lowest-price',
               'OnDemandBaseCapacity': 0,
-              'OnDemandPercentageAboveBaseCapacity': 100,
+              'OnDemandPercentageAboveBaseCapacity': 0,
               'SpotAllocationStrategy': 'lowest-price',
               'SpotInstancePools': 1,
               'SpotMaxPrice': '0.752',
@@ -1347,6 +1351,54 @@
         }),
         'Type': 'AWS::EC2::InternetGateway',
       }),
+      'CustomVPCNatSecurityGroup0D7993B8': dict({
+        'Metadata': dict({
+          'cdk_nag': dict({
+            'rules_to_suppress': list([
+              dict({
+                'id': 'AwsSolutions-EC28',
+                'reason': 'NAT Instance does not require autoscaling.',
+              }),
+              dict({
+                'id': 'AwsSolutions-EC29',
+                'reason': 'NAT Instance does not require autoscaling.',
+              }),
+            ]),
+          }),
+        }),
+        'Properties': dict({
+          'GroupDescription': 'Security Group for NAT instances',
+          'SecurityGroupEgress': list([
+            dict({
+              'CidrIp': '0.0.0.0/0',
+              'Description': 'Allow all outbound traffic by default',
+              'IpProtocol': '-1',
+            }),
+          ]),
+          'SecurityGroupIngress': list([
+            dict({
+              'CidrIp': dict({
+                'Fn::GetAtt': list([
+                  'CustomVPC616E3387',
+                  'CidrBlock',
+                ]),
+              }),
+              'Description': 'Allow NAT Traffic from inside VPC',
+              'IpProtocol': '-1',
+            }),
+          ]),
+          'Tags': list([
+            dict({
+              'Key': 'Name',
+              'Value': 'ComfyUIStack/CustomVPC',
+            }),
+          ]),
+          'VpcId': dict({
+            'Ref': 'CustomVPC616E3387',
+          }),
+        }),
+        'Type': 'AWS::EC2::SecurityGroup',
+      }),
       'CustomVPCPrivateSubnet1DefaultRouteF0DFC019': dict({
         'Metadata': dict({
           'cdk_nag': dict({
@@ -1364,8 +1416,8 @@
         }),
         'Properties': dict({
           'DestinationCidrBlock': '0.0.0.0/0',
-          'NatGatewayId': dict({
-            'Ref': 'CustomVPCPublicSubnet1NATGateway92AA6F6B',
+          'InstanceId': dict({
+            'Ref': 'CustomVPCPublicSubnet1NatInstance8719985F',
           }),
           'RouteTableId': dict({
             'Ref': 'CustomVPCPrivateSubnet1RouteTable997AB149',
@@ -1482,8 +1534,8 @@
         }),
         'Properties': dict({
           'DestinationCidrBlock': '0.0.0.0/0',
-          'NatGatewayId': dict({
-            'Ref': 'CustomVPCPublicSubnet2NATGateway29C19A05',
+          'InstanceId': dict({
+            'Ref': 'CustomVPCPublicSubnet2NatInstance49628086',
           }),
           'RouteTableId': dict({
             'Ref': 'CustomVPCPrivateSubnet2RouteTableBA12A594',
@@ -1612,36 +1664,9 @@
         }),
         'Type': 'AWS::EC2::Route',
       }),
-      'CustomVPCPublicSubnet1EIP573B5F01': dict({
-        'Metadata': dict({
-          'cdk_nag': dict({
-            'rules_to_suppress': list([
-              dict({
-                'id': 'AwsSolutions-EC28',
-                'reason': 'NAT Instance does not require autoscaling.',
-              }),
-              dict({
-                'id': 'AwsSolutions-EC29',
-                'reason': 'NAT Instance does not require autoscaling.',
-              }),
-            ]),
-          }),
-        }),
-        'Properties': dict({
-          'Domain': 'vpc',
-          'Tags': list([
-            dict({
-              'Key': 'Name',
-              'Value': 'ComfyUIStack/CustomVPC/PublicSubnet1',
-            }),
-          ]),
-        }),
-        'Type': 'AWS::EC2::EIP',
-      }),
-      'CustomVPCPublicSubnet1NATGateway92AA6F6B': dict({
+      'CustomVPCPublicSubnet1NatInstance8719985F': dict({
         'DependsOn': list([
-          'CustomVPCPublicSubnet1DefaultRoute3F6B4A61',
-          'CustomVPCPublicSubnet1RouteTableAssociationCB53C136',
+          'CustomVPCPublicSubnet1NatInstanceInstanceRole3BBC18FB',
         ]),
         'Metadata': dict({
           'cdk_nag': dict({
@@ -1658,23 +1683,108 @@
           }),
         }),
         'Properties': dict({
-          'AllocationId': dict({
-            'Fn::GetAtt': list([
-              'CustomVPCPublicSubnet1EIP573B5F01',
-              'AllocationId',
-            ]),
+          'AvailabilityZone': 'dummy1a',
+          'IamInstanceProfile': dict({
+            'Ref': 'CustomVPCPublicSubnet1NatInstanceInstanceProfile49CA0C31',
           }),
+          'ImageId': dict({
+            'Ref': 'SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61arm64C96584B6F00A464EAD1953AFF4B05118Parameter',
+          }),
+          'InstanceType': 't4g.nano',
+          'SecurityGroupIds': list([
+            dict({
+              'Fn::GetAtt': list([
+                'CustomVPCNatSecurityGroup0D7993B8',
+                'GroupId',
+              ]),
+            }),
+          ]),
+          'SourceDestCheck': False,
           'SubnetId': dict({
             'Ref': 'CustomVPCPublicSubnet1Subnet758D3909',
           }),
           'Tags': list([
             dict({
               'Key': 'Name',
-              'Value': 'ComfyUIStack/CustomVPC/PublicSubnet1',
+              'Value': 'ComfyUIStack/CustomVPC/PublicSubnet1/NatInstance',
+            }),
+          ]),
+          'UserData': dict({
+            'Fn::Base64': '''
+              #!/bin/bash
+              yum install iptables-services -y
+              systemctl enable iptables
+              systemctl start iptables
+              echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/custom-ip-forwarding.conf
+              sudo sysctl -p /etc/sysctl.d/custom-ip-forwarding.conf
+              sudo /sbin/iptables -t nat -A POSTROUTING -o $(route | awk '/^default/{print $NF}') -j MASQUERADE
+              sudo /sbin/iptables -F FORWARD
+              sudo service iptables save
+            ''',
+          }),
+        }),
+        'Type': 'AWS::EC2::Instance',
+      }),
+      'CustomVPCPublicSubnet1NatInstanceInstanceProfile49CA0C31': dict({
+        'Metadata': dict({
+          'cdk_nag': dict({
+            'rules_to_suppress': list([
+              dict({
+                'id': 'AwsSolutions-EC28',
+                'reason': 'NAT Instance does not require autoscaling.',
+              }),
+              dict({
+                'id': 'AwsSolutions-EC29',
+                'reason': 'NAT Instance does not require autoscaling.',
+              }),
+            ]),
+          }),
+        }),
+        'Properties': dict({
+          'Roles': list([
+            dict({
+              'Ref': 'CustomVPCPublicSubnet1NatInstanceInstanceRole3BBC18FB',
             }),
           ]),
         }),
-        'Type': 'AWS::EC2::NatGateway',
+        'Type': 'AWS::IAM::InstanceProfile',
+      }),
+      'CustomVPCPublicSubnet1NatInstanceInstanceRole3BBC18FB': dict({
+        'Metadata': dict({
+          'cdk_nag': dict({
+            'rules_to_suppress': list([
+              dict({
+                'id': 'AwsSolutions-EC28',
+                'reason': 'NAT Instance does not require autoscaling.',
+              }),
+              dict({
+                'id': 'AwsSolutions-EC29',
+                'reason': 'NAT Instance does not require autoscaling.',
+              }),
+            ]),
+          }),
+        }),
+        'Properties': dict({
+          'AssumeRolePolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': 'sts:AssumeRole',
+                'Effect': 'Allow',
+                'Principal': dict({
+                  'Service': 'ec2.amazonaws.com',
+                }),
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+          'Tags': list([
+            dict({
+              'Key': 'Name',
+              'Value': 'ComfyUIStack/CustomVPC/PublicSubnet1/NatInstance',
+            }),
+          ]),
+        }),
+        'Type': 'AWS::IAM::Role',
       }),
       'CustomVPCPublicSubnet1RouteTableAssociationCB53C136': dict({
         'Metadata': dict({
@@ -1797,36 +1907,9 @@
         }),
         'Type': 'AWS::EC2::Route',
       }),
-      'CustomVPCPublicSubnet2EIP2135ECD3': dict({
-        'Metadata': dict({
-          'cdk_nag': dict({
-            'rules_to_suppress': list([
-              dict({
-                'id': 'AwsSolutions-EC28',
-                'reason': 'NAT Instance does not require autoscaling.',
-              }),
-              dict({
-                'id': 'AwsSolutions-EC29',
-                'reason': 'NAT Instance does not require autoscaling.',
-              }),
-            ]),
-          }),
-        }),
-        'Properties': dict({
-          'Domain': 'vpc',
-          'Tags': list([
-            dict({
-              'Key': 'Name',
-              'Value': 'ComfyUIStack/CustomVPC/PublicSubnet2',
-            }),
-          ]),
-        }),
-        'Type': 'AWS::EC2::EIP',
-      }),
-      'CustomVPCPublicSubnet2NATGateway29C19A05': dict({
+      'CustomVPCPublicSubnet2NatInstance49628086': dict({
         'DependsOn': list([
-          'CustomVPCPublicSubnet2DefaultRoute00A279CB',
-          'CustomVPCPublicSubnet2RouteTableAssociation7DDF1FE5',
+          'CustomVPCPublicSubnet2NatInstanceInstanceRole8A907202',
         ]),
         'Metadata': dict({
           'cdk_nag': dict({
@@ -1843,23 +1926,108 @@
           }),
         }),
         'Properties': dict({
-          'AllocationId': dict({
-            'Fn::GetAtt': list([
-              'CustomVPCPublicSubnet2EIP2135ECD3',
-              'AllocationId',
-            ]),
+          'AvailabilityZone': 'dummy1b',
+          'IamInstanceProfile': dict({
+            'Ref': 'CustomVPCPublicSubnet2NatInstanceInstanceProfile8B803384',
           }),
+          'ImageId': dict({
+            'Ref': 'SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61arm64C96584B6F00A464EAD1953AFF4B05118Parameter',
+          }),
+          'InstanceType': 't4g.nano',
+          'SecurityGroupIds': list([
+            dict({
+              'Fn::GetAtt': list([
+                'CustomVPCNatSecurityGroup0D7993B8',
+                'GroupId',
+              ]),
+            }),
+          ]),
+          'SourceDestCheck': False,
           'SubnetId': dict({
             'Ref': 'CustomVPCPublicSubnet2Subnet9CA8FBEB',
           }),
           'Tags': list([
             dict({
               'Key': 'Name',
-              'Value': 'ComfyUIStack/CustomVPC/PublicSubnet2',
+              'Value': 'ComfyUIStack/CustomVPC/PublicSubnet2/NatInstance',
+            }),
+          ]),
+          'UserData': dict({
+            'Fn::Base64': '''
+              #!/bin/bash
+              yum install iptables-services -y
+              systemctl enable iptables
+              systemctl start iptables
+              echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/custom-ip-forwarding.conf
+              sudo sysctl -p /etc/sysctl.d/custom-ip-forwarding.conf
+              sudo /sbin/iptables -t nat -A POSTROUTING -o $(route | awk '/^default/{print $NF}') -j MASQUERADE
+              sudo /sbin/iptables -F FORWARD
+              sudo service iptables save
+            ''',
+          }),
+        }),
+        'Type': 'AWS::EC2::Instance',
+      }),
+      'CustomVPCPublicSubnet2NatInstanceInstanceProfile8B803384': dict({
+        'Metadata': dict({
+          'cdk_nag': dict({
+            'rules_to_suppress': list([
+              dict({
+                'id': 'AwsSolutions-EC28',
+                'reason': 'NAT Instance does not require autoscaling.',
+              }),
+              dict({
+                'id': 'AwsSolutions-EC29',
+                'reason': 'NAT Instance does not require autoscaling.',
+              }),
+            ]),
+          }),
+        }),
+        'Properties': dict({
+          'Roles': list([
+            dict({
+              'Ref': 'CustomVPCPublicSubnet2NatInstanceInstanceRole8A907202',
             }),
           ]),
         }),
-        'Type': 'AWS::EC2::NatGateway',
+        'Type': 'AWS::IAM::InstanceProfile',
+      }),
+      'CustomVPCPublicSubnet2NatInstanceInstanceRole8A907202': dict({
+        'Metadata': dict({
+          'cdk_nag': dict({
+            'rules_to_suppress': list([
+              dict({
+                'id': 'AwsSolutions-EC28',
+                'reason': 'NAT Instance does not require autoscaling.',
+              }),
+              dict({
+                'id': 'AwsSolutions-EC29',
+                'reason': 'NAT Instance does not require autoscaling.',
+              }),
+            ]),
+          }),
+        }),
+        'Properties': dict({
+          'AssumeRolePolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': 'sts:AssumeRole',
+                'Effect': 'Allow',
+                'Principal': dict({
+                  'Service': 'ec2.amazonaws.com',
+                }),
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+          'Tags': list([
+            dict({
+              'Key': 'Name',
+              'Value': 'ComfyUIStack/CustomVPC/PublicSubnet2/NatInstance',
+            }),
+          ]),
+        }),
+        'Type': 'AWS::IAM::Role',
       }),
       'CustomVPCPublicSubnet2RouteTable253D0D06': dict({
         'Metadata': dict({

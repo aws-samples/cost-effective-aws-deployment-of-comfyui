@@ -48,9 +48,9 @@ class ComfyUIStack(Stack):
                  scope: Construct,
                  construct_id: str,
                  # VPC
-                 cheapVpc: bool = False,
+                 cheapVpc: bool = True,
                  # Spot
-                 useSpot: bool = False,
+                 useSpot: bool = True,
                  spotPrice: str = "0.752",
                  # Auto Scaling
                  autoScaleDown: bool = True,
