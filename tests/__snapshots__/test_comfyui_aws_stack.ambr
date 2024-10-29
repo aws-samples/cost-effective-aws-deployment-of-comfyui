@@ -3523,20 +3523,6 @@
         'Type': 'AWS::EC2::SecurityGroup',
       }),
       'ServiceSecurityGroupfromComfyUIStackALBSecurityGroup3787156581816D310FEB': dict({
-        'Metadata': dict({
-          'cdk_nag': dict({
-            'rules_to_suppress': list([
-              dict({
-                'id': 'AwsSolutions-EC23',
-                'reason': 'The Security Group and ALB needs to allow 0.0.0.0/0 inbound access for the ALB to be publicly accessible. Additional security is provided via Cognito authentication.',
-              }),
-              dict({
-                'id': 'AwsSolutions-ELB2',
-                'reason': 'Adding access logs requires extra S3 bucket so removing it for sample purposes.',
-              }),
-            ]),
-          }),
-        }),
         'Properties': dict({
           'Description': 'Load balancer to target',
           'FromPort': 8181,
