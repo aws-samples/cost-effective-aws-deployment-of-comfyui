@@ -16,7 +16,15 @@ comfy_ui_stack = ComfyUIStack(
     ),
     tags={
         "Repository": "aws-samples/cost-effective-aws-deployment-of-comfyui"
-    }
+    },
+    # Override Parameters (example)
+    # auto_scale_down=False,
+    # schedule_auto_scaling=True,
+    # timezone="Asia/Tokyo",
+    # schedule_scale_up="0 8 * * 1-5",
+    # schedule_scale_down="0 19 * * *",
+    # self_sign_up_enabled=True,
+    # allowed_sign_up_email_domains=["amazon.com"],
 )
 
 Aspects.of(app).add(AwsSolutionsChecks(verbose=False))
@@ -25,7 +33,8 @@ NagSuppressions.add_stack_suppressions(stack=comfy_ui_stack, suppressions=[
     {"id": "AwsSolutions-IAM4",
         "reason": "For sample purposes the managed policy is sufficient"},
     {"id": "AwsSolutions-IAM5",
-        "reason": "Some rules require '*' wildcard as an example ACM operations, and other are sufficient for Sample"}
+        "reason": "Some rules require '*' wildcard as an example ACM operations, and other are sufficient for Sample"},
+    {"id": "CdkNagValidationFailure", "reason": "Suppressions for cdk nag"},
 ])
 
 app.synth()

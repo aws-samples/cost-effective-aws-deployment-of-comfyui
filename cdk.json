@@ -15,23 +15,6 @@
     ]
   },
   "context": {
-    "useSpot": true,
-    "spotPrice": "0.752",
-    "cheapVpc": true,
-    "autoScaleDown": true,
-    "scheduleAutoScaling": false,
-    "timezone": "UTC",
-    "scheduleScaleUp": "0 9 * * 1-5",
-    "scheduleScaleDown": "0 18 * * *",
-    "selfSignUpEnabled": false,
-    "allowedSignUpEmailDomains": null,
-    "mfaRequired": false,
-    "samlAuthEnabled": false,
-    "allowedIpV4AddressRanges": null,
-    "allowedIpV6AddressRanges": null,
-    "hostName": null,
-    "domainName": null,
-    "hostedZoneId": null,
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/core:target-partitions": [
