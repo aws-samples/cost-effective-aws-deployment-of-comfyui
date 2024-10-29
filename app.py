@@ -25,7 +25,8 @@ NagSuppressions.add_stack_suppressions(stack=comfy_ui_stack, suppressions=[
     {"id": "AwsSolutions-IAM4",
         "reason": "For sample purposes the managed policy is sufficient"},
     {"id": "AwsSolutions-IAM5",
-        "reason": "Some rules require '*' wildcard as an example ACM operations, and other are sufficient for Sample"}
+        "reason": "Some rules require '*' wildcard as an example ACM operations, and other are sufficient for Sample"},
+    {"id": "CdkNagValidationFailure", "reason": "Suppressions for cdk nag"},
 ])
 
 app.synth()

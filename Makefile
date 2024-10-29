@@ -6,6 +6,8 @@ install-python: venv/touchfile
 venv/touchfile: requirements.txt
 	@echo "Creating virtual environment..."
 	python3 -m venv venv
+	@echo "Activating venv..."
+	. venv/bin/activate
 	@echo "Installing Python requirements..."
 	pip install -r requirements.txt
 	touch venv/touchfile

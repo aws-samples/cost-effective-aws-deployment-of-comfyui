@@ -1,10 +1,8 @@
 from aws_cdk import (
     aws_ecs as ecs,
     aws_ec2 as ec2,
-    aws_ecr as ecr,
     aws_ecr_assets as ecr_assets,
     aws_logs as logs,
-    aws_s3 as s3,
     aws_iam as iam,
     aws_autoscaling as autoscaling,
     aws_elasticloadbalancingv2 as elbv2,
@@ -89,8 +87,8 @@ class ComfyUIStack(Stack):
         # Check host
         is_sagemaker_studio = "SAGEMAKER_APP_TYPE_LOWERCASE" in os.environ
 
-        # Use the default VPC
-        # vpc = ec2.Vpc.from_lookup(self, "VPC", is_default=True)
+        # VPC
+
         if cheapVpc:
             natInstance = ec2.NatProvider.instance_v2(
                 instance_type=ec2.InstanceType("t4g.nano"),
@@ -136,6 +134,8 @@ class ComfyUIStack(Stack):
             destination=ec2.FlowLogDestination.to_cloud_watch_logs(),
         )
 
+        # ALB
+
         # Create ALB Security Group
         alb_security_group = ec2.SecurityGroup(
             self,
@@ -149,6 +149,180 @@ class ComfyUIStack(Stack):
             ec2.Port.tcp(443),
             "Allow inbound traffic on port 443",
         )
+
+        # Application Load Balancer
+        alb = elbv2.ApplicationLoadBalancer(
+            self, "ComfyUIALB",
+            vpc=vpc,
+            internet_facing=True,
+            security_group=alb_security_group
+        )
+
+        # Redirect Load Balancer traffic on port 80 to port 443
+        alb.add_redirect(
+            source_protocol=elbv2.ApplicationProtocol.HTTP,
+            source_port=80,
+            target_protocol=elbv2.ApplicationProtocol.HTTPS,
+            target_port=443
+        )
+
+        # Certificate
+        if hostName and domainName and hostedZoneId:
+            hostedZone = route53.HostedZone.from_hosted_zone_attributes(
+                self,
+                "HostedZone",
+                hosted_zone_id=hostedZoneId,
+                zone_name=domainName
+            )
+            route53.ARecord(
+                self,
+                "AliasRecord",
+                zone=hostedZone,
+                target=route53.RecordTarget.from_alias(
+                    route53_targets.LoadBalancerTarget(alb)
+                ),
+                record_name=f"{hostName}.{domainName}",
+            )
+            certificate = acm.Certificate(
+                self,
+                "Certificate",
+                domain_name=f"{hostName}.{domainName}",
+                validation=acm.CertificateValidation.from_dns(hostedZone),
+            )
+        else:
+            # Add self-signed certificate to the Load Balancer to support https
+            cert_function = lambda_.Function(
+                self,
+                "RegisterSelfSignedCert",
+                handler="function.lambda_handler",
+                code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/cert_lambda", bundling=BundlingOptions(
+                    image=lambda_.Runtime.PYTHON_3_10.bundling_image,
+                    command=[
+                        "bash",
+                        "-c",
+                        "pip install -r requirements.txt -t /asset-output --platform manylinux_2_12_x86_64 --only-binary=:all: && cp -au . /asset-output",
+                    ],
+                    platform="linux/amd64",
+                    network="sagemaker" if is_sagemaker_studio else None
+                )),
+                runtime=lambda_.Runtime.PYTHON_3_10,
+                timeout=Duration.seconds(amount=120),
+            )
+            cert_function.add_to_role_policy(
+                statement=iam.PolicyStatement(
+                    actions=["acm:ImportCertificate"], resources=["*"]
+                )
+            )
+            cert_function.add_to_role_policy(
+                statement=iam.PolicyStatement(
+                    actions=["acm:AddTagsToCertificate"], resources=["*"]
+                )
+            )
+            provider = cr.Provider(
+                self, "SelfSignedCertCustomResourceProvider", on_event_handler=cert_function
+            )
+            custom_resource = CustomResource(
+                self,
+                "SelfSignedCertCustomResource",
+                service_token=provider.service_token,
+                properties={
+                    "email_address": config["self_signed_certificate"]["email_address"],
+                    "common_name": config["self_signed_certificate"]["common_name"],
+                    "city": config["self_signed_certificate"]["city"],
+                    "state": config["self_signed_certificate"]["state"],
+                    "country_code": config["self_signed_certificate"]["country_code"],
+                    "organization": config["self_signed_certificate"]["organization"],
+                    "organizational_unit": config["self_signed_certificate"][
+                        "organizational_unit"
+                    ],
+                    "validity_seconds": config["self_signed_certificate"][
+                        "validity_seconds"
+                    ],
+                },
+            )
+            cert_function.add_to_role_policy(
+                statement=iam.PolicyStatement(
+                    actions=["acm:DeleteCertificate"],
+                    resources=["*"],
+                )
+            )
+            certificate = acm.Certificate.from_certificate_arn(
+                self, id="SelfSignedCert", certificate_arn=custom_resource.ref
+            )
+
+        # WAF: ipv4 ipv6 restriction
+        if allowedIpV4AddressRanges or allowedIpV6AddressRanges:
+            wafRules = []
+            if allowedIpV4AddressRanges:
+                ipv4 = wafv2.CfnIPSet(
+                    self,
+                    "IpV4Set",
+                    addresses=allowedIpV4AddressRanges,
+                    ip_address_version="IPV4",
+                    scope="REGIONAL",
+                )
+                wafRules += [
+                    wafv2.CfnWebACL.RuleProperty(
+                        name="IpV4SetRule",
+                        priority=1,
+                        visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                            cloud_watch_metrics_enabled=True,
+                            metric_name="IpV4SetRule",
+                            sampled_requests_enabled=True,
+                        ),
+                        statement=wafv2.CfnWebACL.StatementProperty(
+                            ip_set_reference_statement={"arn": ipv4.attr_arn}
+                        ),
+                        action=wafv2.CfnWebACL.RuleActionProperty(
+                            allow=wafv2.CfnWebACL.AllowActionProperty(),
+                        ),
+                    )
+                ]
+            if allowedIpV6AddressRanges:
+                ipv6 = wafv2.CfnIPSet(
+                    self,
+                    "IpV6Set",
+                    addresses=allowedIpV6AddressRanges,
+                    ip_address_version="IPV6",
+                    scope="REGIONAL",
+                )
+                wafRules += [
+                    wafv2.CfnWebACL.RuleProperty(
+                        name="IpV6SetRule",
+                        priority=2,
+                        visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                            cloud_watch_metrics_enabled=True,
+                            metric_name="IpV6SetRule",
+                            sampled_requests_enabled=True,
+                        ),
+                        statement=wafv2.CfnWebACL.StatementProperty(
+                            ip_set_reference_statement={"arn": ipv6.attr_arn}
+                        ),
+                        action=wafv2.CfnWebACL.RuleActionProperty(
+                            allow=wafv2.CfnWebACL.AllowActionProperty(),
+                        ),
+                    )
+                ]
+            waf = wafv2.CfnWebACL(
+                self,
+                "WebACL",
+                default_action=wafv2.CfnWebACL.DefaultActionProperty(block={}),
+                scope="REGIONAL",
+                visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                    cloud_watch_metrics_enabled=True,
+                    metric_name="WebACL",
+                    sampled_requests_enabled=True,
+                ),
+                rules=wafRules,
+            )
+            waf_association = wafv2.CfnWebACLAssociation(
+                self,
+                "WebACLAssociation",
+                resource_arn=alb.load_balancer_arn,
+                web_acl_arn=waf.attr_arn,
+            )
+
+        # ASG
 
         # Create Auto Scaling Group Security Group
         asg_security_group = ec2.SecurityGroup(
@@ -303,6 +477,8 @@ class ComfyUIStack(Stack):
                 schedule=autoscaling.Schedule.expression(scheduleScaleUp)
             )
 
+        # ECS
+
         # Create an ECS Cluster
         cluster = ecs.Cluster(
             self, "ComfyUICluster",
@@ -447,106 +623,6 @@ class ComfyUIStack(Stack):
             min_healthy_percent=0,
         )
 
-        # Application Load Balancer
-        alb = elbv2.ApplicationLoadBalancer(
-            self, "ComfyUIALB",
-            vpc=vpc,
-            internet_facing=True,
-            security_group=alb_security_group
-        )
-
-        # Redirect Load Balancer traffic on port 80 to port 443
-        alb.add_redirect(
-            source_protocol=elbv2.ApplicationProtocol.HTTP,
-            source_port=80,
-            target_protocol=elbv2.ApplicationProtocol.HTTPS,
-            target_port=443
-        )
-
-        lambda_role = iam.Role(
-            self, "LambdaExecutionRole",
-            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
-            managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name(
-                    "service-role/AWSLambdaBasicExecutionRole"),
-                iam.ManagedPolicy.from_aws_managed_policy_name(
-                    "AutoScalingFullAccess"),
-            ]
-        )
-
-        lambda_role.add_to_policy(iam.PolicyStatement(
-            actions=["ecs:DescribeServices",
-                     "ecs:ListTasks",
-                     "elasticloadbalancing:ModifyListener",
-                     "elasticloadbalancing:ModifyRule",
-                     "elasticloadbalancing:DescribeRules",
-                     "elasticloadbalancing:DescribeListeners",
-                     "ecs:DescribeServices",
-                     "ecs:UpdateService",
-                     "ssm:SendCommand"],
-            resources=["*"]
-        ))
-
-        admin_lambda = lambda_.Function(
-            self,
-            "AdminFunction",
-            handler="admin.handler",
-            code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/admin_lambda"),
-            role=lambda_role,
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            timeout=Duration.seconds(amount=60)
-        )
-
-        restart_docker_lambda = lambda_.Function(
-            self,
-            "RestartDockerFunction",
-            handler="restart_docker.handler",
-            code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/admin_lambda"),
-            role=lambda_role,
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            timeout=Duration.seconds(amount=60)
-        )
-
-        shutdown_lambda = lambda_.Function(
-            self,
-            "ShutdownFunction",
-            handler="shutdown.handler",
-            code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/admin_lambda"),
-            role=lambda_role,
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            timeout=Duration.seconds(amount=60)
-        )
-
-        scaleup_trigger_lambda = lambda_.Function(
-            self,
-            "ScaleUpTriggerFunction",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            role=lambda_role,
-            handler="scaleup_trigger.handler",
-            code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/admin_lambda"),
-            timeout=Duration.seconds(amount=60)
-        )
-
-        scalein_listener_lambda = lambda_.Function(
-            self,
-            "ScaleinListenerFunction",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            role=lambda_role,
-            handler="scalein_listener.handler",
-            code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/admin_lambda"),
-            timeout=Duration.seconds(amount=60)
-        )
-
-        scaleup_listener_lambda = lambda_.Function(
-            self,
-            "ScaleupListenerFunction",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            role=lambda_role,
-            handler="scaleup_listener.handler",
-            code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/admin_lambda"),
-            timeout=Duration.seconds(amount=60)
-        )
-
         # Add target groups for ECS service
         ecs_target_group = elbv2.ApplicationTargetGroup(
             self,
@@ -570,6 +646,123 @@ class ComfyUIStack(Stack):
                 unhealthy_threshold_count=3,
                 healthy_threshold_count=2,
             )
+        )
+
+        # Admin Lambda
+
+        lambda_role = iam.Role(
+            self, "LambdaExecutionRole",
+            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
+            managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "service-role/AWSLambdaBasicExecutionRole"),
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "AutoScalingFullAccess"),
+            ]
+        )
+        lambda_role.add_to_policy(iam.PolicyStatement(
+            actions=["ecs:DescribeServices",
+                     "ecs:ListTasks",
+                     "elasticloadbalancing:ModifyListener",
+                     "elasticloadbalancing:ModifyRule",
+                     "elasticloadbalancing:DescribeRules",
+                     "elasticloadbalancing:DescribeListeners",
+                     "ecs:DescribeServices",
+                     "ecs:UpdateService",
+                     "ssm:SendCommand"],
+            resources=["*"]
+        ))
+
+        admin_lambda = lambda_.Function(
+            self,
+            "AdminFunction",
+            handler="admin.handler",
+            code=lambda_.Code.from_asset(
+                "./comfyui_aws_stack/lambda/admin_lambda"),
+            role=lambda_role,
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            timeout=Duration.seconds(amount=60),
+            environment={
+                "ASG_NAME": auto_scaling_group.auto_scaling_group_name,
+                "ECS_CLUSTER_NAME": cluster.cluster_name,
+                "ECS_SERVICE_NAME": service.service_name
+            }
+        )
+
+        restart_docker_lambda = lambda_.Function(
+            self,
+            "RestartDockerFunction",
+            handler="restart_docker.handler",
+            code=lambda_.Code.from_asset(
+                "./comfyui_aws_stack/lambda/admin_lambda"),
+            role=lambda_role,
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            timeout=Duration.seconds(amount=60),
+            environment={
+                "ASG_NAME": auto_scaling_group.auto_scaling_group_name,
+                "ECS_CLUSTER_NAME": cluster.cluster_name,
+                "ECS_SERVICE_NAME": service.service_name
+            }
+        )
+
+        shutdown_lambda = lambda_.Function(
+            self,
+            "ShutdownFunction",
+            handler="shutdown.handler",
+            code=lambda_.Code.from_asset(
+                "./comfyui_aws_stack/lambda/admin_lambda"),
+            role=lambda_role,
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            timeout=Duration.seconds(amount=60),
+            environment={
+                "ASG_NAME": auto_scaling_group.auto_scaling_group_name,
+            }
+        )
+
+        scaleup_trigger_lambda = lambda_.Function(
+            self,
+            "ScaleUpTriggerFunction",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            role=lambda_role,
+            handler="scaleup_trigger.handler",
+            code=lambda_.Code.from_asset(
+                "./comfyui_aws_stack/lambda/admin_lambda"),
+            timeout=Duration.seconds(amount=60),
+            environment={
+                "ASG_NAME": auto_scaling_group.auto_scaling_group_name,
+                "ECS_CLUSTER_NAME": cluster.cluster_name,
+                "ECS_SERVICE_NAME": service.service_name
+            }
+        )
+
+        scalein_listener_lambda = lambda_.Function(
+            self,
+            "ScaleinListenerFunction",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            role=lambda_role,
+            handler="scalein_listener.handler",
+            code=lambda_.Code.from_asset(
+                "./comfyui_aws_stack/lambda/admin_lambda"),
+            timeout=Duration.seconds(amount=60),
+            environment={
+                "ASG_NAME": auto_scaling_group.auto_scaling_group_name,
+            }
+        )
+
+        scaleup_listener_lambda = lambda_.Function(
+            self,
+            "ScaleupListenerFunction",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            role=lambda_role,
+            handler="scaleup_listener.handler",
+            code=lambda_.Code.from_asset(
+                "./comfyui_aws_stack/lambda/admin_lambda"),
+            timeout=Duration.seconds(amount=60),
+            environment={
+                "ASG_NAME": auto_scaling_group.auto_scaling_group_name,
+                "ECS_CLUSTER_NAME": cluster.cluster_name,
+                "ECS_SERVICE_NAME": service.service_name
+            }
         )
 
         lambda_admin_target_group = elbv2.ApplicationTargetGroup(
@@ -604,103 +797,9 @@ class ComfyUIStack(Stack):
             targets=[targets.LambdaTarget(scaleup_trigger_lambda)]
         )
 
-        # Certificate
-        if hostName and domainName and hostedZoneId:
-            hostedZone = route53.HostedZone.from_hosted_zone_attributes(
-                self,
-                "HostedZone",
-                hosted_zone_id=hostedZoneId,
-                zone_name=domainName
-            )
-            route53.ARecord(
-                self,
-                "AliasRecord",
-                zone=hostedZone,
-                target=route53.RecordTarget.from_alias(
-                    route53_targets.LoadBalancerTarget(alb)
-                ),
-                record_name=f"{hostName}.{domainName}",
-            )
-            certificate = acm.Certificate(
-                self,
-                "Certificate",
-                domain_name=f"{hostName}.{domainName}",
-                validation=acm.CertificateValidation.from_dns(hostedZone),
-            )
-        else:
-            # Add self-signed certificate to the Load Balancer to support https
-            cert_function = lambda_.Function(
-                self,
-                "RegisterSelfSignedCert",
-                handler="function.lambda_handler",
-                code=lambda_.Code.from_asset("./comfyui_aws_stack/lambda/cert_lambda", bundling=BundlingOptions(
-                    image=lambda_.Runtime.PYTHON_3_10.bundling_image,
-                    command=[
-                        "bash",
-                        "-c",
-                        "pip install -r requirements.txt -t /asset-output --platform manylinux_2_12_x86_64 --only-binary=:all: && cp -au . /asset-output",
-                    ],
-                    platform="linux/amd64",
-                    network="sagemaker" if is_sagemaker_studio else None
-                )),
-                runtime=lambda_.Runtime.PYTHON_3_10,
-                timeout=Duration.seconds(amount=120),
-            )
-            cert_function.add_to_role_policy(
-                statement=iam.PolicyStatement(
-                    actions=["acm:ImportCertificate"], resources=["*"]
-                )
-            )
-            cert_function.add_to_role_policy(
-                statement=iam.PolicyStatement(
-                    actions=["acm:AddTagsToCertificate"], resources=["*"]
-                )
-            )
-            provider = cr.Provider(
-                self, "SelfSignedCertCustomResourceProvider", on_event_handler=cert_function
-            )
-            custom_resource = CustomResource(
-                self,
-                "SelfSignedCertCustomResource",
-                service_token=provider.service_token,
-                properties={
-                    "email_address": config["self_signed_certificate"]["email_address"],
-                    "common_name": config["self_signed_certificate"]["common_name"],
-                    "city": config["self_signed_certificate"]["city"],
-                    "state": config["self_signed_certificate"]["state"],
-                    "country_code": config["self_signed_certificate"]["country_code"],
-                    "organization": config["self_signed_certificate"]["organization"],
-                    "organizational_unit": config["self_signed_certificate"][
-                        "organizational_unit"
-                    ],
-                    "validity_seconds": config["self_signed_certificate"][
-                        "validity_seconds"
-                    ],
-                },
-            )
-            cert_function.add_to_role_policy(
-                statement=iam.PolicyStatement(
-                    actions=["acm:DeleteCertificate"],
-                    resources=["*"],
-                )
-            )
-            certificate = acm.Certificate.from_certificate_arn(
-                self, id="SelfSignedCert", certificate_arn=custom_resource.ref
-            )
+        # Auth
 
-        # Add listener to the Load Balancer on port 443
-        listener = alb.add_listener(
-            "Listener",
-            certificates=[certificate],
-            port=443,
-            protocol=elbv2.ApplicationProtocol.HTTPS,
-            default_action=elbv2.ListenerAction.forward([ecs_target_group])
-        )
-
-        """
-        Sets up the cognito infrastructure with the user pool, custom domain
-        and app client for use by the ALB.
-        """
+        # Sets up the cognito infrastructure with the user pool, custom domain and app client for use by the ALB.
         cognito_custom_domain = f"comfyui-alb-auth-{suffix}"
         application_dns_name = f"{hostName}.{domainName}" if hostName and domainName else alb.load_balancer_dns_name
 
@@ -778,7 +877,6 @@ class ComfyUIStack(Stack):
         user_pool_user_info_url = f"{user_pool_full_domain}/oauth2/userInfo"
 
         # Auth Lambda
-
         if allowedSignUpEmailDomains != None:
             checkEmailDomainFunction = lambda_.Function(
                 self,
@@ -798,8 +896,49 @@ class ComfyUIStack(Stack):
                 checkEmailDomainFunction
             )
 
-        # ALB Rule
+        # Cognito Post Deploy fix
+        post_process_function = lambda_.Function(
+            self,
+            "UpdateCognitoCallbackUrlFunction",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            code=lambda_.Code.from_asset(
+                "./comfyui_aws_stack/lambda/post_process_lambda"),
+            handler="function.lambda_handler",
+            environment={
+                "COGNITO_USER_POOL_ID": user_pool.user_pool_id,
+                "COGNITO_CLIENT_ID": user_pool_client.user_pool_client_id,
+            },
+        )
+        post_process_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "cognito-idp:DescribeUserPoolClient",
+                    "cognito-idp:UpdateUserPoolClient",
+                ],
+                resources=["*"],
+            )
+        )
+        post_process_provider = cr.Provider(
+            self, "UpdateCognitoCallbackUrlProvider",
+            on_event_handler=post_process_function,
+        )
+        CustomResource(
+            self, "UpdateCognitoCallbackUrl",
+            service_token=post_process_provider.service_token,
+        )
 
+        # Associate resources to ALB
+
+        # Add listener to the Load Balancer on port 443
+        listener = alb.add_listener(
+            "Listener",
+            certificates=[certificate],
+            port=443,
+            protocol=elbv2.ApplicationProtocol.HTTPS,
+            default_action=elbv2.ListenerAction.forward([ecs_target_group])
+        )
+
+        # ALB Rule
         lambda_admin_rule = elbv2.ApplicationListenerRule(
             self,
             "LambdaAdminRule",
@@ -813,11 +952,6 @@ class ComfyUIStack(Stack):
                 user_pool_domain=user_pool_custom_domain,
             ),
         )
-
-        admin_lambda.add_environment(
-            "ASG_NAME", auto_scaling_group.auto_scaling_group_name)
-        admin_lambda.add_environment("ECS_CLUSTER_NAME", cluster.cluster_name)
-        admin_lambda.add_environment("ECS_SERVICE_NAME", service.service_name)
 
         lambda_restart_docker_rule = elbv2.ApplicationListenerRule(
             self,
@@ -835,15 +969,6 @@ class ComfyUIStack(Stack):
             ),
         )
 
-        restart_docker_lambda.add_environment(
-            "ASG_NAME", auto_scaling_group.auto_scaling_group_name)
-        restart_docker_lambda.add_environment(
-            "ECS_CLUSTER_NAME", cluster.cluster_name)
-        restart_docker_lambda.add_environment(
-            "ECS_SERVICE_NAME", service.service_name)
-        restart_docker_lambda.add_environment(
-            "LISTENER_RULE_ARN", lambda_admin_rule.listener_rule_arn)
-
         lambda_shutdown_rule = elbv2.ApplicationListenerRule(
             self,
             "LambdaShutdownRule",
@@ -860,9 +985,6 @@ class ComfyUIStack(Stack):
             ),
         )
 
-        shutdown_lambda.add_environment(
-            "ASG_NAME", auto_scaling_group.auto_scaling_group_name)
-
         lambda_scaleup_rule = elbv2.ApplicationListenerRule(
             self,
             "LambdaScaleupRule",
@@ -878,13 +1000,6 @@ class ComfyUIStack(Stack):
                 user_pool_domain=user_pool_custom_domain,
             ),
         )
-
-        scaleup_trigger_lambda.add_environment(
-            "ASG_NAME", auto_scaling_group.auto_scaling_group_name)
-        scaleup_trigger_lambda.add_environment(
-            "ECS_CLUSTER_NAME", cluster.cluster_name)
-        scaleup_trigger_lambda.add_environment(
-            "ECS_SERVICE_NAME", service.service_name)
 
         # Add authentication action as the first priority rule
         auth_rule = listener.add_action(
@@ -915,11 +1030,6 @@ class ComfyUIStack(Stack):
             targets=[event_targets.LambdaFunction(scalein_listener_lambda)]
         )
 
-        scalein_listener_lambda.add_environment(
-            "ASG_NAME", auto_scaling_group.auto_scaling_group_name)
-        scalein_listener_lambda.add_environment(
-            "LISTENER_RULE_ARN", lambda_admin_rule.listener_rule_arn)
-
         ecs_task_state_change_event_rule = events.Rule(
             self,
             "EcsTaskStateChangeRule",
@@ -934,117 +1044,12 @@ class ComfyUIStack(Stack):
             targets=[event_targets.LambdaFunction(scaleup_listener_lambda)]
         )
 
-        scaleup_listener_lambda.add_environment(
-            "ASG_NAME", auto_scaling_group.auto_scaling_group_name)
-        scaleup_listener_lambda.add_environment(
-            "ECS_CLUSTER_NAME", cluster.cluster_name)
-        scaleup_listener_lambda.add_environment(
-            "ECS_SERVICE_NAME", service.service_name)
+        restart_docker_lambda.add_environment(
+            "LISTENER_RULE_ARN", lambda_admin_rule.listener_rule_arn)
+        scalein_listener_lambda.add_environment(
+            "LISTENER_RULE_ARN", lambda_admin_rule.listener_rule_arn)
         scaleup_listener_lambda.add_environment(
             "LISTENER_RULE_ARN", lambda_admin_rule.listener_rule_arn)
-
-        # WAF: ipv4 ipv6 restriction
-        if allowedIpV4AddressRanges or allowedIpV6AddressRanges:
-            wafRules = []
-            if allowedIpV4AddressRanges:
-                ipv4 = wafv2.CfnIPSet(
-                    self,
-                    "IpV4Set",
-                    addresses=allowedIpV4AddressRanges,
-                    ip_address_version="IPV4",
-                    scope="REGIONAL",
-                )
-                wafRules += [
-                    wafv2.CfnWebACL.RuleProperty(
-                        name="IpV4SetRule",
-                        priority=1,
-                        visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
-                            cloud_watch_metrics_enabled=True,
-                            metric_name="IpV4SetRule",
-                            sampled_requests_enabled=True,
-                        ),
-                        statement=wafv2.CfnWebACL.StatementProperty(
-                            ip_set_reference_statement={"arn": ipv4.attr_arn}
-                        ),
-                        action=wafv2.CfnWebACL.RuleActionProperty(
-                            allow=wafv2.CfnWebACL.AllowActionProperty(),
-                        ),
-                    )
-                ]
-            if allowedIpV6AddressRanges:
-                ipv6 = wafv2.CfnIPSet(
-                    self,
-                    "IpV6Set",
-                    addresses=allowedIpV6AddressRanges,
-                    ip_address_version="IPV6",
-                    scope="REGIONAL",
-                )
-                wafRules += [
-                    wafv2.CfnWebACL.RuleProperty(
-                        name="IpV6SetRule",
-                        priority=2,
-                        visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
-                            cloud_watch_metrics_enabled=True,
-                            metric_name="IpV6SetRule",
-                            sampled_requests_enabled=True,
-                        ),
-                        statement=wafv2.CfnWebACL.StatementProperty(
-                            ip_set_reference_statement={"arn": ipv6.attr_arn}
-                        ),
-                        action=wafv2.CfnWebACL.RuleActionProperty(
-                            allow=wafv2.CfnWebACL.AllowActionProperty(),
-                        ),
-                    )
-                ]
-            waf = wafv2.CfnWebACL(
-                self,
-                "WebACL",
-                default_action=wafv2.CfnWebACL.DefaultActionProperty(block={}),
-                scope="REGIONAL",
-                visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
-                    cloud_watch_metrics_enabled=True,
-                    metric_name="WebACL",
-                    sampled_requests_enabled=True,
-                ),
-                rules=wafRules,
-            )
-            waf_association = wafv2.CfnWebACLAssociation(
-                self,
-                "WebACLAssociation",
-                resource_arn=alb.load_balancer_arn,
-                web_acl_arn=waf.attr_arn,
-            )
-
-        # Post Deploy fix
-        post_process_function = lambda_.Function(
-            self,
-            "UpdateCognitoCallbackUrlFunction",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            code=lambda_.Code.from_asset(
-                "./comfyui_aws_stack/lambda/post_process_lambda"),
-            handler="function.lambda_handler",
-            environment={
-                "COGNITO_USER_POOL_ID": user_pool.user_pool_id,
-                "COGNITO_CLIENT_ID": user_pool_client.user_pool_client_id,
-            },
-        )
-        post_process_function.add_to_role_policy(
-            iam.PolicyStatement(
-                actions=[
-                    "cognito-idp:DescribeUserPoolClient",
-                    "cognito-idp:UpdateUserPoolClient",
-                ],
-                resources=["*"],
-            )
-        )
-        post_process_provider = cr.Provider(
-            self, "UpdateCognitoCallbackUrlProvider",
-            on_event_handler=post_process_function,
-        )
-        CustomResource(
-            self, "UpdateCognitoCallbackUrl",
-            service_token=post_process_provider.service_token,
-        )
 
         # Nag
 
