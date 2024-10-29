@@ -32,6 +32,7 @@ import os
 import json
 import hashlib
 import urllib.parse
+from typing import List
 
 # Load the Environment Configuration from the JSON file
 with open(
@@ -43,7 +44,33 @@ with open(
 
 class ComfyUIStack(Stack):
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self,
+                 scope: Construct,
+                 construct_id: str,
+                 # VPC
+                 cheapVpc: bool = False,
+                 # Spot
+                 useSpot: bool = False,
+                 spotPrice: str = "0.752",
+                 # Auto Scaling
+                 autoScaleDown: bool = True,
+                 scheduleAutoScaling: bool = False,
+                 timezone: str = "UTC",
+                 scheduleScaleUp: str = "0 9 * * 1-5",
+                 scheduleScaleDown: str = "0 18 * * *",
+                 # Sign up
+                 selfSignUpEnabled: bool = False,
+                 allowedSignUpEmailDomains: List[str] = None,
+                 mfaRequired: bool = False,
+                 samlAuthEnabled: bool = False,
+                 # Network Restriction
+                 allowedIpV4AddressRanges: List[str] = None,
+                 allowedIpV6AddressRanges: List[str] = None,
+                 # Custom Domain
+                 hostName: str = None,
+                 domainName: str = None,
+                 hostedZoneId: str = None,
+                 **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         # Setting
@@ -51,38 +78,6 @@ class ComfyUIStack(Stack):
         unique_hash = hashlib.sha256(
             unique_input.encode('utf-8')).hexdigest()[:10]
         suffix = unique_hash.lower()
-
-        # Get context
-        autoScaleDown = self.node.try_get_context("autoScaleDown")
-        if autoScaleDown is None:
-            autoScaleDown = True
-
-        useSpot = self.node.try_get_context("useSpot") or False
-        spotPrice = self.node.try_get_context("spotPrice") or "0.752"
-        cheapVpc = self.node.try_get_context("cheapVpc") or False
-
-        scheduleAutoScaling = self.node.try_get_context(
-            "scheduleAutoScaling") or False
-        timezone = self.node.try_get_context("timezone") or "UTC"
-        scheduleScaleUp = self.node.try_get_context(
-            "scheduleScaleUp") or "0 9 * * 1-5"
-        scheduleScaleDown = self.node.try_get_context(
-            "scheduleScaleDown") or "0 18 * * *"
-
-        selfSignUpEnabled = self.node.try_get_context(
-            "selfSignUpEnabled") or False
-        allowedSignUpEmailDomains = self.node.try_get_context(
-            "allowedSignUpEmailDomains") or None
-        mfaRequired = self.node.try_get_context("mfaRequired") or False
-        samlAuthEnabled = self.node.try_get_context("samlAuthEnabled") or False
-
-        allowedIpV4AddressRanges = self.node.try_get_context(
-            "allowedIpV4AddressRanges") or None
-        allowedIpV6AddressRanges = self.node.try_get_context(
-            "allowedIpV6AddressRanges") or None
-        hostName = self.node.try_get_context("hostName") or None
-        domainName = self.node.try_get_context("domainName") or None
-        hostedZoneId = self.node.try_get_context("hostedZoneId") or None
 
         # Check host
         is_sagemaker_studio = "SAGEMAKER_APP_TYPE_LOWERCASE" in os.environ

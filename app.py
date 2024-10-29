@@ -16,7 +16,15 @@ comfy_ui_stack = ComfyUIStack(
     ),
     tags={
         "Repository": "aws-samples/cost-effective-aws-deployment-of-comfyui"
-    }
+    },
+    # Override Parameters (example)
+    # autoScaleDown=False,
+    # scheduleAutoScaling=True,
+    # timezone="Asia/Tokyo",
+    # scheduleScaleUp="0 8 * * 1-5",
+    # scheduleScaleDown="0 19 * * *",
+    # selfSignUpEnabled=True,
+    # allowedSignUpEmailDomains=["amazon.com"],
 )
 
 Aspects.of(app).add(AwsSolutionsChecks(verbose=False))
