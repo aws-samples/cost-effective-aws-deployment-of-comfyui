@@ -169,7 +169,7 @@ For the sake of preventing data loss from accidental deletions and keeping the e
 
 2. After ASG deletion you just can run following command in your terminal. This command will delete all remaining resources, but EBS and the Cognito User pool.
 ```bash
-cdk destroy
+npx cdk destroy
 ```
 
 3. Delete EBS Volume
