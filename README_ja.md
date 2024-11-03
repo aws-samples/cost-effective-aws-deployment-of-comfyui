@@ -168,7 +168,7 @@ ComfyUI の機能を最大限に活用し、シームレスな体験を確保す
 
 2. ASG 削除後、ターミナルで次のコマンドを実行すると、EBS と Cognito User Pool を除くすべての残りのリソースが削除されます。
 ```bash
-cdk destroy
+npx cdk destroy
 ```
 
 3. EBS ボリュームを削除する
@@ -245,13 +245,12 @@ cdk destroy
 
 ### CDK 便利なコマンド
 
-* `npm run cdk ls`          アプリ内のすべてのスタックを一覧表示
-* `npm run cdk synth`       合成された CloudFormation テンプレートを出力
-* `npm run cdk deploy`      デフォルトの AWS アカウント/リージョンにこのスタックをデプロイ
-* `npm run cdk destroy`     デフォルトの AWS アカウント/リージョンからデプロイされたスタックを破棄
-* `npm run cdk diff`        デプロイされたスタックと現在の状態を比較
-* `npm run cdk docs`        CDK ドキュメントを開く
-* `npm run test`            テストを実行
+* `npx run cdk ls`          アプリ内のすべてのスタックを一覧表示
+* `npx run cdk synth`       合成された CloudFormation テンプレートを出力
+* `npx run cdk deploy`      デフォルトの AWS アカウント/リージョンにこのスタックをデプロイ
+* `npx run cdk destroy`     デフォルトの AWS アカウント/リージョンからデプロイされたスタックを破棄
+* `npx run cdk diff`        デプロイされたスタックと現在の状態を比較
+* `npx run cdk docs`        CDK ドキュメントを開く
 
 ## Q&A
 

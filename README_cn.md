@@ -153,7 +153,7 @@ wget -c https://huggingface.co/ai-forever/Real-ESRGAN/blob/main/RealESRGAN_x2.pt
 
 2. 删除ASG后,在终端运行以下命令将删除除EBS和Cognito User Pool之外的所有剩余资源。
 ```bash
-cdk destroy
+npx cdk destroy
 ```
 
 3. 删除EBS卷
@@ -229,13 +229,12 @@ cdk destroy
 
 ### CDK 便利的命令
 
-* `npm run cdk ls`          列出应用程序中的所有堆栈
-* `npm run cdk synth`       输出合成的 CloudFormation 模板
-* `npm run cdk deploy`      将此堆栈部署到默认的 AWS 帐户/区域
-* `npm run cdk destroy`     从默认的 AWS 帐户/区域中删除已部署的堆栈
-* `npm run cdk diff`        比较已部署的堆栈与当前状态
-* `npm run cdk docs`        打开 CDK 文档
-* `npm run test`            运行测试
+* `npx run cdk ls`          列出应用程序中的所有堆栈
+* `npx run cdk synth`       输出合成的 CloudFormation 模板
+* `npx run cdk deploy`      将此堆栈部署到默认的 AWS 帐户/区域
+* `npx run cdk destroy`     从默认的 AWS 帐户/区域中删除已部署的堆栈
+* `npx run cdk diff`        比较已部署的堆栈与当前状态
+* `npx run cdk docs`        打开 CDK 文档
 
 ## 问答
 
