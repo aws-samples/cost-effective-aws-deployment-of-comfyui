@@ -83,7 +83,7 @@ class EcsConstruct(Construct):
             name="ComfyUIVolume-" + suffix,
             docker_volume_configuration=ecs.DockerVolumeConfiguration(
                 scope=ecs.Scope.SHARED,
-                driver="rexray/ebs",
+                driver="public.ecr.aws/j1l5j1d1/rexray-ebs",
                 driver_opts={
                     "volumetype": "gp3",
                     "size": "250"  # Size in GiB
