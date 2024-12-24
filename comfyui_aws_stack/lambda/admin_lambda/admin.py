@@ -32,7 +32,7 @@ def handler(event, context):
             # ComfyUI is currently scaling up
             display_restart_shutdown = False
             display_scaleup = False
-            status_message = "ComfyUI is currently scaling up."
+            status_message = "ComfyUI is currently scaling up. It may take 5-10 minutes"
         elif desired_capacity == 0 and running_tasks_count > 0:
             # ComfyUI is currently scaling down
             display_restart_shutdown = False
@@ -67,8 +67,9 @@ def handler(event, context):
         </div>
         """ if display_scaleup else ""
 
-        status_html = "<p>{}</p>".format(
-            status_message) if status_message else ""
+        status_html = f"<p id='status-message'>{status_message}</p>" if status_message else ""
+        if "ComfyUI is currently scaling up." in status_html:
+            status_html += '<div class="loader"></div>'
 
         # Full HTML Content
         html = f"""
@@ -111,7 +112,31 @@ def handler(event, context):
                     .button-link:hover {{
                         background-color: #005fa3;
                     }}
+                    .loader {{
+                        border: 5px solid #f3f3f3;
+                        border-top: 5px solid #3498db;
+                        border-radius: 50%;
+                        width: 50px;
+                        height: 50px;
+                        animation: spin 1s linear infinite;
+                        margin: 20px auto;
+                    }}
+                    @keyframes spin {{
+                        0% {{ transform: rotate(0deg); }}
+                        100% {{ transform: rotate(360deg); }}
+                    }}
                 </style>
+                <script>
+                    function checkAndReload() {{
+                        const statusMessage = document.getElementById('status-message');
+                        if (statusMessage && statusMessage.textContent.includes("ComfyUI is currently scaling up.")) {{
+                            setTimeout(() => {{
+                                location.reload();
+                            }}, 30000); // reload every 30 seconds
+                        }}
+                    }}
+                    window.onload = checkAndReload;
+                </script>
             </head>
             <body>
                 <main>
