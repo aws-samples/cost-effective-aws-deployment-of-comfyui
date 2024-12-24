@@ -56,7 +56,7 @@ class AsgConstruct(Construct):
         user_data_script.add_commands("""
             #!/bin/bash
             REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region) 
-            docker plugin install rexray/ebs --grant-all-permissions REXRAY_PREEMPT=true EBS_REGION=$REGION
+            docker plugin install public.ecr.aws/j1l5j1d1/rexray-ebs --grant-all-permissions REXRAY_PREEMPT=true EBS_REGION=$REGION
             systemctl restart docker
         """)
 
