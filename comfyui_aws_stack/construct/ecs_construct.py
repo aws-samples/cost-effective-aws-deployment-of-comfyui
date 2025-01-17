@@ -4,6 +4,7 @@ from aws_cdk import (
     aws_ecr_assets as ecr_assets,
     aws_logs as logs,
     aws_iam as iam,
+    aws_cognito as cognito,
     aws_autoscaling as autoscaling,
     aws_elasticloadbalancingv2 as elbv2,
     Duration,
@@ -27,6 +28,9 @@ class EcsConstruct(Construct):
             alb_security_group: ec2.SecurityGroup,
             is_sagemaker_studio: bool,
             suffix: str,
+            region: str,
+            user_pool: cognito.UserPool,
+            user_pool_client: cognito.UserPoolClient,
             **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -119,7 +123,13 @@ class EcsConstruct(Construct):
                 timeout=Duration.seconds(10),
                 retries=8,
                 start_period=Duration.seconds(30)
-            )
+            ),
+            environment={
+                "AWS_REGION": region,
+                "COGNITO_USER_POOL_ID": user_pool.user_pool_id,
+                "COGNITO_CLIENT_ID": user_pool_client.user_pool_client_id,
+                # Add other env variables here
+            }
         )
 
         # Mount the host volume to the container

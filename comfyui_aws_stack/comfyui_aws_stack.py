@@ -48,6 +48,7 @@ class ComfyUIStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # Setting
+        region = self.region
         unique_input = f"{self.account}-{self.region}-{self.stack_name}"
         unique_hash = hashlib.sha256(
             unique_input.encode('utf-8')).hexdigest()[:10]
@@ -76,6 +77,20 @@ class ComfyUIStack(Stack):
             hosted_zone_id=hosted_zone_id,
         )
 
+        # Auth
+
+        auth_construct = AuthConstruct(
+            self, "AuthConstruct",
+            alb=alb_construct.alb,
+            suffix=suffix,
+            host_name=host_name,
+            domain_name=domain_name,
+            saml_auth_enabled=saml_auth_enabled,
+            self_sign_up_enabled=self_sign_up_enabled,
+            mfa_required=mfa_required,
+            allowed_sign_up_email_domains=allowed_sign_up_email_domains,
+        )
+
         # ASG
 
         asg_construct = AsgConstruct(
@@ -99,6 +114,9 @@ class ComfyUIStack(Stack):
             alb_security_group=alb_construct.alb_security_group,
             is_sagemaker_studio=is_sagemaker_studio,
             suffix=suffix,
+            region=region,
+            user_pool=auth_construct.user_pool,
+            user_pool_client=auth_construct.user_pool_client,
         )
 
         # Admin Lambda
@@ -109,20 +127,6 @@ class ComfyUIStack(Stack):
             cluster=ecs_construct.cluster,
             service=ecs_construct.service,
             auto_scaling_group=asg_construct.auto_scaling_group,
-        )
-
-        # Auth
-
-        auth_construct = AuthConstruct(
-            self, "AuthConstruct",
-            alb=alb_construct.alb,
-            suffix=suffix,
-            host_name=host_name,
-            domain_name=domain_name,
-            saml_auth_enabled=saml_auth_enabled,
-            self_sign_up_enabled=self_sign_up_enabled,
-            mfa_required=mfa_required,
-            allowed_sign_up_email_domains=allowed_sign_up_email_domains,
         )
 
         # Associate resources to ALB
