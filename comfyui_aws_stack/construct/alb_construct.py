@@ -36,7 +36,7 @@ config = {
 
 class AlbConstruct(Construct):
     scope: Construct
-    alb: ec2.Vpc
+    alb: elbv2.ApplicationLoadBalancer
     alb_security_group: ec2.SecurityGroup
     certificate: acm.Certificate
     listener: elbv2.ApplicationListener
