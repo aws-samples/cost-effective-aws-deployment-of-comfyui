@@ -256,6 +256,7 @@ class AlbConstruct(Construct):
             lambda_restart_docker_target_group: elbv2.ApplicationTargetGroup,
             lambda_shutdown_target_group: elbv2.ApplicationTargetGroup,
             lambda_scaleup_target_group: elbv2.ApplicationTargetGroup,
+            lambda_signout_target_group: elbv2.ApplicationTargetGroup,
             user_pool: cognito.UserPool,
             user_pool_client: cognito.UserPoolClient,
             user_pool_custom_domain: cognito.UserPoolDomain,
@@ -336,10 +337,25 @@ class AlbConstruct(Construct):
             ),
         )
 
+        lambda_signout_rule = elbv2.ApplicationListenerRule(
+            scope,
+            "LambdaSignoutRule",
+            listener=listener,
+            priority=25,
+            conditions=[elbv2.ListenerCondition.path_patterns(["/signout"])],
+            action=elb_actions.AuthenticateCognitoAction(
+                next=elbv2.ListenerAction.forward(
+                    [lambda_signout_target_group]),
+                user_pool=user_pool,
+                user_pool_client=user_pool_client,
+                user_pool_domain=user_pool_custom_domain,
+            ),
+        )
+
         # Add authentication action as the first priority rule
         auth_rule = listener.add_action(
             "AuthenticateRule",
-            priority=25,
+            priority=30,
             action=elb_actions.AuthenticateCognitoAction(
                 next=elbv2.ListenerAction.forward([ecs_target_group]),
                 user_pool=user_pool,

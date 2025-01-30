@@ -127,6 +127,7 @@ class ComfyUIStack(Stack):
             cluster=ecs_construct.cluster,
             service=ecs_construct.service,
             auto_scaling_group=asg_construct.auto_scaling_group,
+            user_pool_logout_url=auth_construct.user_pool_logout_url,
         )
 
         # Associate resources to ALB
@@ -137,6 +138,7 @@ class ComfyUIStack(Stack):
             lambda_restart_docker_target_group=admin_construct.lambda_restart_docker_target_group,
             lambda_shutdown_target_group=admin_construct.lambda_shutdown_target_group,
             lambda_scaleup_target_group=admin_construct.lambda_scaleup_target_group,
+            lambda_signout_target_group=admin_construct.lambda_signout_target_group,
             user_pool=auth_construct.user_pool,
             user_pool_client=auth_construct.user_pool_client,
             user_pool_custom_domain=auth_construct.user_pool_custom_domain,

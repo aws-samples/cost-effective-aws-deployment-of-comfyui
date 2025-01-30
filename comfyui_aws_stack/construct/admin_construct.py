@@ -21,6 +21,7 @@ class AdminConstruct(Construct):
     lambda_restart_docker_target_group: elbv2.ApplicationTargetGroup
     lambda_shutdown_target_group: elbv2.ApplicationTargetGroup
     lambda_scaleup_target_group: elbv2.ApplicationTargetGroup
+    lambda_signout_target_group: elbv2.ApplicationTargetGroup
 
     def __init__(
             self,
@@ -30,6 +31,7 @@ class AdminConstruct(Construct):
             cluster: ecs.Cluster,
             service: ecs.IService,
             auto_scaling_group: autoscaling.AutoScalingGroup,
+            user_pool_logout_url: str,
             **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -148,6 +150,20 @@ class AdminConstruct(Construct):
             }
         )
 
+        signout_lambda = lambda_.Function(
+            scope,
+            "SignoutFunction",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            role=lambda_role,
+            handler="signout.handler",
+            code=lambda_.Code.from_asset(
+                "./comfyui_aws_stack/lambda/admin_lambda"),
+            timeout=Duration.seconds(amount=60),
+            environment={
+                "REDIRECT_URL": user_pool_logout_url
+            }
+        )
+
         lambda_admin_target_group = elbv2.ApplicationTargetGroup(
             scope,
             "LambdaAdminTargetGroup",
@@ -178,6 +194,14 @@ class AdminConstruct(Construct):
             vpc=vpc,
             target_type=elbv2.TargetType.LAMBDA,
             targets=[targets.LambdaTarget(scaleup_trigger_lambda)]
+        )
+
+        lambda_signout_target_group = elbv2.ApplicationTargetGroup(
+            scope,
+            "LambdaSignoutTargetGroup",
+            vpc=vpc,
+            target_type=elbv2.TargetType.LAMBDA,
+            targets=[targets.LambdaTarget(signout_lambda)]
         )
 
         # CloudWatch Event Rule for ASG scale-in events
@@ -219,6 +243,7 @@ class AdminConstruct(Construct):
         self.lambda_restart_docker_target_group = lambda_restart_docker_target_group
         self.lambda_shutdown_target_group = lambda_shutdown_target_group
         self.lambda_scaleup_target_group = lambda_scaleup_target_group
+        self.lambda_signout_target_group = lambda_signout_target_group
 
     def add_environments(self,
                          lambda_admin_rule: elbv2.ApplicationListenerRule,
