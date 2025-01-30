@@ -18,6 +18,8 @@ class AuthConstruct(Construct):
     user_pool: cognito.UserPool
     user_pool_client: cognito.UserPoolClient
     user_pool_custom_domain: cognito.UserPoolDomain
+    user_pool_logout_url: str
+    user_pool_user_info_url: str
     application_dns_name: str
 
     def __init__(
@@ -168,3 +170,5 @@ class AuthConstruct(Construct):
         self.user_pool_client = user_pool_client
         self.user_pool_custom_domain = user_pool_custom_domain
         self.application_dns_name = application_dns_name
+        self.user_pool_logout_url = user_pool_logout_url
+        self.user_pool_user_info_url = user_pool_user_info_url

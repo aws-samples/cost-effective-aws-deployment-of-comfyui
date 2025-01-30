@@ -722,7 +722,7 @@
         'Properties': dict({
           'Code': dict({
             'S3Bucket': 'cdk-hnb659fds-assets-123456789012-us-east-1',
-            'S3Key': 'a22b2ebd0dd0ddae16ed62cd560b9ececb790bdd7eb0fec745c676e78a05f533.zip',
+            'S3Key': '7b527831388d5df68fc57d3ea64cc8f4b2117160e0cf209031c30d50499b5ae6.zip',
           }),
           'Environment': dict({
             'Variables': dict({
@@ -976,7 +976,7 @@
           'ListenerArn': dict({
             'Ref': 'ComfyUIALBListener13444DC1',
           }),
-          'Priority': 25,
+          'Priority': 30,
         }),
         'Type': 'AWS::ElasticLoadBalancingV2::ListenerRule',
       }),
@@ -2634,7 +2634,7 @@
                       
                                   #!/bin/bash
                                   REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region) 
-                                  docker plugin install rexray/ebs --grant-all-permissions REXRAY_PREEMPT=true EBS_REGION=$REGION
+                                  docker plugin install public.ecr.aws/j1l5j1d1/rexray-ebs --grant-all-permissions REXRAY_PREEMPT=true EBS_REGION=$REGION
                                   systemctl restart docker
                               
                       echo ECS_CLUSTER=
@@ -3010,6 +3010,71 @@
         }),
         'Type': 'AWS::ElasticLoadBalancingV2::TargetGroup',
       }),
+      'LambdaSignoutRuleCC59D0AD': dict({
+        'Properties': dict({
+          'Actions': list([
+            dict({
+              'AuthenticateCognitoConfig': dict({
+                'UserPoolArn': dict({
+                  'Fn::GetAtt': list([
+                    'ComfyUIuserPool52D4ADA1',
+                    'Arn',
+                  ]),
+                }),
+                'UserPoolClientId': dict({
+                  'Ref': 'ComfyUIuserPoolalbappclient47C9BB97',
+                }),
+                'UserPoolDomain': dict({
+                  'Ref': 'ComfyUIuserPooluserpooldomain109F57F1',
+                }),
+              }),
+              'Order': 1,
+              'Type': 'authenticate-cognito',
+            }),
+            dict({
+              'Order': 2,
+              'TargetGroupArn': dict({
+                'Ref': 'LambdaSignoutTargetGroup56ED53E6',
+              }),
+              'Type': 'forward',
+            }),
+          ]),
+          'Conditions': list([
+            dict({
+              'Field': 'path-pattern',
+              'PathPatternConfig': dict({
+                'Values': list([
+                  '/signout',
+                ]),
+              }),
+            }),
+          ]),
+          'ListenerArn': dict({
+            'Ref': 'ComfyUIALBListener13444DC1',
+          }),
+          'Priority': 25,
+        }),
+        'Type': 'AWS::ElasticLoadBalancingV2::ListenerRule',
+      }),
+      'LambdaSignoutTargetGroup56ED53E6': dict({
+        'DependsOn': list([
+          'SignoutFunctionInvoke2UTWxhlfyqbT5FTn5jvgbLgjFfJwzswGk55DU1HYBC79E8D8',
+        ]),
+        'Properties': dict({
+          'TargetType': 'lambda',
+          'Targets': list([
+            dict({
+              'Id': dict({
+                'Fn::GetAtt': list([
+                  'SignoutFunctionD27E8708',
+                  'Arn',
+                ]),
+              }),
+            }),
+          ]),
+        }),
+        'Type': 'AWS::ElasticLoadBalancingV2::TargetGroup',
+      }),
       'LogGroupF5B46931': dict({
         'DeletionPolicy': 'Delete',
         'Properties': dict({
@@ -3110,7 +3175,7 @@
         'Properties': dict({
           'Code': dict({
             'S3Bucket': 'cdk-hnb659fds-assets-123456789012-us-east-1',
-            'S3Key': 'a22b2ebd0dd0ddae16ed62cd560b9ececb790bdd7eb0fec745c676e78a05f533.zip',
+            'S3Key': '7b527831388d5df68fc57d3ea64cc8f4b2117160e0cf209031c30d50499b5ae6.zip',
           }),
           'Environment': dict({
             'Variables': dict({
@@ -3215,7 +3280,7 @@
         'Properties': dict({
           'Code': dict({
             'S3Bucket': 'cdk-hnb659fds-assets-123456789012-us-east-1',
-            'S3Key': 'a22b2ebd0dd0ddae16ed62cd560b9ececb790bdd7eb0fec745c676e78a05f533.zip',
+            'S3Key': '7b527831388d5df68fc57d3ea64cc8f4b2117160e0cf209031c30d50499b5ae6.zip',
           }),
           'Environment': dict({
             'Variables': dict({
@@ -3266,7 +3331,7 @@
         'Properties': dict({
           'Code': dict({
             'S3Bucket': 'cdk-hnb659fds-assets-123456789012-us-east-1',
-            'S3Key': 'a22b2ebd0dd0ddae16ed62cd560b9ececb790bdd7eb0fec745c676e78a05f533.zip',
+            'S3Key': '7b527831388d5df68fc57d3ea64cc8f4b2117160e0cf209031c30d50499b5ae6.zip',
           }),
           'Environment': dict({
             'Variables': dict({
@@ -3298,7 +3363,7 @@
         'Properties': dict({
           'Code': dict({
             'S3Bucket': 'cdk-hnb659fds-assets-123456789012-us-east-1',
-            'S3Key': 'a22b2ebd0dd0ddae16ed62cd560b9ececb790bdd7eb0fec745c676e78a05f533.zip',
+            'S3Key': '7b527831388d5df68fc57d3ea64cc8f4b2117160e0cf209031c30d50499b5ae6.zip',
           }),
           'Environment': dict({
             'Variables': dict({
@@ -3551,7 +3616,7 @@
         'Properties': dict({
           'Code': dict({
             'S3Bucket': 'cdk-hnb659fds-assets-123456789012-us-east-1',
-            'S3Key': 'a22b2ebd0dd0ddae16ed62cd560b9ececb790bdd7eb0fec745c676e78a05f533.zip',
+            'S3Key': '7b527831388d5df68fc57d3ea64cc8f4b2117160e0cf209031c30d50499b5ae6.zip',
           }),
           'Environment': dict({
             'Variables': dict({
@@ -3585,6 +3650,61 @@
         }),
         'Type': 'AWS::Lambda::Permission',
       }),
+      'SignoutFunctionD27E8708': dict({
+        'DependsOn': list([
+          'LambdaExecutionRoleDefaultPolicy6D69732F',
+          'LambdaExecutionRoleD5C26073',
+        ]),
+        'Properties': dict({
+          'Code': dict({
+            'S3Bucket': 'cdk-hnb659fds-assets-123456789012-us-east-1',
+            'S3Key': '7b527831388d5df68fc57d3ea64cc8f4b2117160e0cf209031c30d50499b5ae6.zip',
+          }),
+          'Environment': dict({
+            'Variables': dict({
+              'REDIRECT_URL': dict({
+                'Fn::Join': list([
+                  '',
+                  list([
+                    'https://',
+                    dict({
+                      'Ref': 'ComfyUIuserPooluserpooldomain109F57F1',
+                    }),
+                    '.auth.us-east-1.amazoncognito.com/logout?client_id=',
+                    dict({
+                      'Ref': 'ComfyUIuserPoolalbappclient47C9BB97',
+                    }),
+                    '&logout_uri=https%3A//%24%7BToken%5BTOKEN.1019%5D%7D',
+                  ]),
+                ]),
+              }),
+            }),
+          }),
+          'Handler': 'signout.handler',
+          'Role': dict({
+            'Fn::GetAtt': list([
+              'LambdaExecutionRoleD5C26073',
+              'Arn',
+            ]),
+          }),
+          'Runtime': 'python3.12',
+          'Timeout': 60,
+        }),
+        'Type': 'AWS::Lambda::Function',
+      }),
+      'SignoutFunctionInvoke2UTWxhlfyqbT5FTn5jvgbLgjFfJwzswGk55DU1HYBC79E8D8': dict({
+        'Properties': dict({
+          'Action': 'lambda:InvokeFunction',
+          'FunctionName': dict({
+            'Fn::GetAtt': list([
+              'SignoutFunctionD27E8708',
+              'Arn',
+            ]),
+          }),
+          'Principal': 'elasticloadbalancing.amazonaws.com',
+        }),
+        'Type': 'AWS::Lambda::Permission',
+      }),
       'TaskDef54694570': dict({
         'Metadata': dict({
           'cdk_nag': dict({
@@ -3603,6 +3723,22 @@
                 dict({
                   'Name': 'AWS_REGION',
                   'Value': 'us-east-1',
+                }),
+                dict({
+                  'Name': 'COGNITO_USER_POOL_ID',
+                  'Value': dict({
+                    'Ref': 'ComfyUIuserPool52D4ADA1',
+                  }),
+                }),
+                dict({
+                  'Name': 'COGNITO_CLIENT_ID',
+                  'Value': dict({
+                    'Ref': 'ComfyUIuserPoolalbappclient47C9BB97',
+                  }),
+                }),
+                dict({
+                  'Name': 'REDIRECT_URL',
+                  'Value': 'https://main.d3p03cfmx0ddk0.amplifyapp.com',
                 }),
               ]),
               'Essential': True,
@@ -3685,7 +3821,7 @@
             dict({
               'DockerVolumeConfiguration': dict({
                 'Autoprovision': True,
-                'Driver': 'rexray/ebs',
+                'Driver': 'public.ecr.aws/j1l5j1d1/rexray-ebs',
                 'DriverOpts': dict({
                   'size': '250',
                   'volumetype': 'gp3',
