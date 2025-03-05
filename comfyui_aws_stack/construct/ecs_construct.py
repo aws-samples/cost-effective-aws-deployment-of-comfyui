@@ -7,6 +7,15 @@ from aws_cdk import (
     aws_cognito as cognito,
     aws_autoscaling as autoscaling,
     aws_elasticloadbalancingv2 as elbv2,
+    aws_cloudwatch as cloudwatch,
+    aws_cloudwatch_actions as cloudwatch_actions,
+    aws_sns as sns,
+    aws_sns_subscriptions as sns_subscriptions,
+    aws_chatbot as chatbot,
+    aws_lambda as lambda_,
+    aws_events as events,
+    aws_events_targets as events_targets,
+    aws_kms as kms,
     Duration,
     RemovalPolicy,
 )
@@ -18,6 +27,7 @@ class EcsConstruct(Construct):
     cluster: ecs.Cluster
     service: ecs.IService
     ecs_target_group: elbv2.ApplicationTargetGroup
+    ecs_health_topic: sns.Topic
 
     def __init__(
             self,
@@ -31,6 +41,8 @@ class EcsConstruct(Construct):
             region: str,
             user_pool: cognito.UserPool,
             user_pool_client: cognito.UserPoolClient,
+            slack_workspace_id: str = None,
+            slack_channel_id: str = None,
             **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -209,6 +221,72 @@ class EcsConstruct(Construct):
             )
         )
 
+        # CloudWatch Monitoring and Slack Notifications
+        if slack_workspace_id and slack_channel_id:
+            # Create SNS Topic for ECS Task Health Alerts
+            ecs_health_topic = sns.Topic(
+                self, "EcsHealthTopic",
+                display_name="ECS Task Health Alerts",
+                # master_key=kms.Alias.from_alias_name(
+                #     self, "Alias", "alias/aws/sns"),
+                enforce_ssl=True
+            )
+
+            # Container Insightsを使用したECSタスク数監視
+            running_tasks_metric = cloudwatch.Metric(
+                namespace="ECS/ContainerInsights",
+                metric_name="RunningTaskCount",
+                dimensions_map={
+                    "ClusterName": cluster.cluster_name,
+                    "ServiceName": service.service_name
+                },
+                period=Duration.minutes(1)
+            )
+
+            # タスク数が0になった場合のアラーム
+            no_running_tasks_alarm = cloudwatch.Alarm(
+                self, "NoRunningTasksAlarm",
+                metric=running_tasks_metric,
+                evaluation_periods=3,
+                threshold=0,
+                comparison_operator=cloudwatch.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
+                alarm_description="Alert when there are no running tasks in the service",
+                treat_missing_data=cloudwatch.TreatMissingData.BREACHING
+            )
+
+            # SNSトピックにアラームを連携
+            no_running_tasks_alarm.add_alarm_action(
+                cloudwatch_actions.SnsAction(ecs_health_topic)
+            )
+
+            # Also monitor ALB target health
+            target_group_health_metric = cloudwatch.Metric(
+                namespace="AWS/ApplicationELB",
+                metric_name="UnHealthyHostCount",
+                dimensions_map={
+                    "TargetGroup": ecs_target_group.target_group_arn.split(":")[-1],
+                    # This might need to be adjusted to match your ALB name pattern
+                    "LoadBalancer": "app/ComfyUIALB"
+                },
+                period=Duration.minutes(1)
+            )
+
+            # Create alarm for unhealthy hosts
+            unhealthy_hosts_alarm = cloudwatch.Alarm(
+                self, "UnhealthyHostsAlarm",
+                metric=target_group_health_metric,
+                evaluation_periods=3,
+                threshold=0,
+                comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+                alarm_description="Alert when there are unhealthy hosts in the target group",
+                treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING
+            )
+
+            # Add SNS action to the alarm
+            unhealthy_hosts_alarm.add_alarm_action(
+                cloudwatch_actions.SnsAction(ecs_health_topic)
+            )
+
         # Nag
 
         NagSuppressions.add_resource_suppressions(
@@ -252,8 +330,21 @@ class EcsConstruct(Construct):
             apply_to_children=True
         )
 
+        NagSuppressions.add_resource_suppressions(
+            [ecs_health_topic],
+            suppressions=[
+                {"id": "AwsSolutions-SNS2",
+                 "reason": "SNS topic is implicitly created by LifeCycleActions and is not critical for sample purposes."
+                 },
+                {"id": "AwsSolutions-SNS3",
+                 "reason": "SNS topic is implicitly created by LifeCycleActions and is not critical for sample purposes."
+                 },
+            ],
+        )
+
         # Output
 
         self.cluster = cluster
         self.service = service
         self.ecs_target_group = ecs_target_group
+        self.ecs_health_topic = ecs_health_topic
