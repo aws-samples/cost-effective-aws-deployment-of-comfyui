@@ -13,6 +13,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/* \
     && git lfs install
 
+# awscli のインストール（Slack通知前に使うため）
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && ./aws/install
+
+
 # Create and switch to a new user
 RUN useradd -m -u 1000 user
 USER user
@@ -46,6 +51,28 @@ RUN mkdir -p custom_nodes/ComfyUI-Manager && \
     git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager custom_nodes/ComfyUI-Manager && \
     . $TEMP_VENV_PATH/bin/activate && pip install --no-cache-dir --upgrade torch torchvision GitPython && \
     pip install -r custom_nodes/ComfyUI-Manager/requirements.txt
+    
+# カスタムノード追加
+RUN cd ./custom_nodes && \
+    git clone https://github.com/yhayano-ponotech/comfyui-save-image-local.git
+
+# Slack通知: basemodels.txt ダウンロード前
+ARG SLACK_WEBHOOK_URL
+RUN if [ ! -z "$SLACK_WEBHOOK_URL" ]; then \
+      curl -s -X POST -H 'Content-type: application/json' \
+      --data "{\"text\":\"📦 Dockerビルド中: モデルダウンロード準備中\"}" \
+      "$SLACK_WEBHOOK_URL"; \
+    fi
+
+# Book-SD-MasterGuide リポジトリから basemodels.txt を取得
+WORKDIR /home/user/opt/
+RUN git clone https://github.com/aicuai/Book-SD-MasterGuide.git
+
+# モデル保存先作成とbasemodels.sh実行
+WORKDIR /home/user/opt/ComfyUI
+RUN mkdir -p models/checkpoints models/vae && \
+    cp /home/user/opt/Book-SD-MasterGuide/basemodels.txt ./basemodels.sh && \
+    bash ./basemodels.sh
 
 # Copy the configuration file
 COPY comfyui_config/extra_model_paths.yaml ./extra_model_paths.yaml
