@@ -69,13 +69,18 @@ RUN if [ ! -z "$SLACK_WEBHOOK_URL" ]; then \
 WORKDIR /home/user/opt/
 RUN git clone https://github.com/aicuai/Book-SD-MasterGuide.git
 
-# モデル保存先作成とbasemodels.sh実行
 WORKDIR /home/user/opt/ComfyUI
 RUN mkdir -p models/checkpoints models/vae && \
-    cp /home/user/opt/Book-SD-MasterGuide/basemodels.txt ./basemodels.sh && \
-    bash ./basemodels.sh
+    cp /home/user/opt/Book-SD-MasterGuide/basemodels.txt ./basemodels.sh
+   
 
 # Copy the configuration file
 COPY comfyui_config/extra_model_paths.yaml ./extra_model_paths.yaml
 
-CMD ["bash", "-c", "source /home/user/opt/ComfyUI/.venv/bin/activate && exec python /home/user/opt/ComfyUI/main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
+# CMD ["bash", "-c", "source /home/user/opt/ComfyUI/.venv/bin/activate && exec python /home/user/opt/ComfyUI/main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
+
+# ダウンタイム最小化とダウンロード、通知など
+COPY entrypoint.sh /home/user/opt/ComfyUI/entrypoint.sh
+RUN chmod +x /home/user/opt/ComfyUI/entrypoint.sh
+
+ENTRYPOINT ["/home/user/opt/ComfyUI/entrypoint.sh"]
