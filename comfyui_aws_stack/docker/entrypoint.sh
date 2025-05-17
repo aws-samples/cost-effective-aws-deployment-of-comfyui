@@ -4,7 +4,9 @@ set -e  # エラーで即終了
 
 VENV_PATH="/home/user/opt/ComfyUI/.venv"
 COMFYUI_PATH="/home/user/opt/ComfyUI"
-MODEL_DL_SCRIPT="$COMFYUI_PATH/basemodels.sh"  # ダウンロードスクリプトのパス
+MASTER_GUIDE_PATH="/home/user/opt/Book-SD-MasterGuide"
+MODEL_DL_SCRIPT="$MASTER_GUIDE_PATH/basemodels.sh"  # ダウンロードスクリプトのパス
+RES_DL_SCRIPT="$MASTER_GUIDE_PATH/SharedComfy.sh" # 追加ファイルのパス
 PORT=8181
 
 # Slack通知関数
@@ -29,16 +31,24 @@ MAIN_PID=$!
 # 数秒待って起動確認
 sleep 5
 
-# モデル・ワークフロー等のダウンロード
+# baseモデルのダウンロード
 if [ -f "$MODEL_DL_SCRIPT" ]; then
   chmod +x "$MODEL_DL_SCRIPT"
   bash "$MODEL_DL_SCRIPT"
 else
   echo "⚠️ モデルダウンロードスクリプトが見つかりません: $MODEL_DL_SCRIPT"
 fi
+# 追加モデル・ワークフロー等のダウンロード
+if [ -f "$RES_DL_SCRIPT" ]; then
+  chmod +x "$RES_DL_SCRIPT"
+  bash "$RES_DL_SCRIPT"
+else
+  echo "⚠️ 追加ファイルインストールスクリプトが見つかりません: $RES_DL_SCRIPT"
+fi
+
 
 # 通知: 再起動予告
-notify_slack "♻️ モデルダウンロード完了 → ComfyUI を再起動します（$HOSTNAME）"
+notify_slack "♻️ 追加モデル、追加ファイルのダウンロード完了 → ComfyUI を再起動します（$HOSTNAME）"
 
 # ComfyUIプロセスを終了させてコンテナ自動再起動（ECSやDockerのRestartPolicy任せ）
 kill -SIGTERM "$MAIN_PID"
