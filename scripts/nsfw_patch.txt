@@ -1,11 +1,11 @@
-diff --git a/main.py b/main.py
-index 0000000..1111111 100644
 --- a/main.py
 +++ b/main.py
-@@ -27,6 +27,11 @@ import shutil
+@@ -25,6 +25,13 @@
+ import asyncio
+ import shutil
  import threading
  import gc
-
++
 +import re
 +import requests
 +
@@ -13,7 +13,7 @@ index 0000000..1111111 100644
 +    "nsfw", "nude", "naked", "sex", "vagina", "penis", "nipples", "cum", "breasts", "pussy", "anal", "xxx"
 +]
 +nsfw_pattern = re.compile(r'\b(?:' + '|'.join(map(re.escape, nsfw_keywords)) + r')\b', re.IGNORECASE)
- 
+
  if os.name == "nt":
      logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 @@ def prompt_worker(q, server_instance):
