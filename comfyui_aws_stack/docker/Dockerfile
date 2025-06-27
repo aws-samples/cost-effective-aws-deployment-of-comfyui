@@ -1,5 +1,9 @@
 FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04
 
+# SLACK_WEBHOOK を外から渡す
+ARG SLACK_WEBHOOK_URL
+ENV SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=America/Los_Angeles
 
@@ -77,8 +81,30 @@ COPY comfyui_config/extra_model_paths.yaml ./extra_model_paths.yaml
 
 # CMD ["bash", "-c", "source /home/user/opt/ComfyUI/.venv/bin/activate && exec python /home/user/opt/ComfyUI/main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
 
-CMD ["/home/user/opt/ComfyUI/.venv/bin/python", "/home/user/opt/ComfyUI/main.py", "--listen", "0.0.0.0", "--port", "8181", "--output-directory", "/home/user/opt/ComfyUI/output/"]
+CMD ["/bin/bash", "-c", "if [ -n \"$SLACK_WEBHOOK_URL\" ]; then curl -X POST -H 'Content-type: application/json' --data \"{\\\"text\\\":\\\"🚀 ComfyUI コンテナが起動しました（$HOSTNAME）\\\"}\" \"$SLACK_WEBHOOK_URL\"; fi && exec /home/user/opt/ComfyUI/.venv/bin/python /home/user/opt/ComfyUI/main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
 
 # ダウンタイム最小化とダウンロード、通知など
 # COPY --chmod=755 entrypoint.sh /home/user/opt/ComfyUI/entrypoint.sh
 # ENTRYPOINT ["/home/user/opt/ComfyUI/entrypoint.sh"]
+
+RUN echo "=== Starting verbose setup ===" \
+  && echo "User: $(whoami)" \
+  && echo "Working Dir: $(pwd)" \
+  && echo "Listing contents:" \
+  && ls -alh \
+  && echo "=== Setup complete ==="
+
+# Slack通知（rootで実行）
+USER root
+RUN apt-get update && apt-get install -y curl && \
+  echo "Sending build notification to Slack..." && \
+  if [ -n "$SLACK_WEBHOOK_URL" ]; then \
+    curl -X POST -H 'Content-type: application/json' \
+    --data "{\"text\":\"✅ Docker image built successfully on $HOSTNAME\"}" \
+    "$SLACK_WEBHOOK_URL"; \
+  else \
+    echo "No SLACK_WEBHOOK_URL provided, skipping Slack notification."; \
+  fi
+
+# 最後に元のユーザーに戻す（必要なら）
+USER user
