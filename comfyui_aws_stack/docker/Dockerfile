@@ -79,8 +79,8 @@ COPY comfyui_config/extra_model_paths.yaml ./extra_model_paths.yaml
 
 # CMD ["bash", "-c", "source /home/user/opt/ComfyUI/.venv/bin/activate && exec python /home/user/opt/ComfyUI/main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
 
-# ダウンタイム最小化とダウンロード、通知など
-COPY entrypoint.sh /home/user/opt/ComfyUI/entrypoint.sh
-RUN chmod +x /home/user/opt/ComfyUI/entrypoint.sh
+CMD ["/home/user/opt/ComfyUI/.venv/bin/python", "/home/user/opt/ComfyUI/main.py", "--listen", "0.0.0.0", "--port", "8181", "--output-directory", "/home/user/opt/ComfyUI/output/"]
 
-ENTRYPOINT ["/home/user/opt/ComfyUI/entrypoint.sh"]
+# ダウンタイム最小化とダウンロード、通知など
+# COPY --chmod=755 entrypoint.sh /home/user/opt/ComfyUI/entrypoint.sh
+# ENTRYPOINT ["/home/user/opt/ComfyUI/entrypoint.sh"]

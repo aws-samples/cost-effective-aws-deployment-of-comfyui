@@ -78,7 +78,8 @@ class EcsConstruct(Construct):
         # CloudWatch Logs Group
         log_group = logs.LogGroup(
             scope,
-            "LogGroup",
+            "ComfyUILogGroup",
+            log_group_name=f"/ecs/comfyui-{suffix}",
             removal_policy=RemovalPolicy.DESTROY,
         )
 

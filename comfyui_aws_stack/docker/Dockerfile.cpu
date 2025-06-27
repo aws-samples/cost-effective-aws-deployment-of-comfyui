@@ -1,0 +1,28 @@
+FROM python:3.10-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Tokyo
+
+# 必要パッケージのインストール
+RUN apt-get update && apt-get install -y \
+    git \
+    ffmpeg \
+    libgl1 \
+    curl \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# 作業ディレクトリ作成
+WORKDIR /opt/ComfyUI
+
+# ComfyUI本体をクローン
+RUN git clone https://github.com/comfyanonymous/ComfyUI.git .
+
+# Python依存関係（CPU版torch使用）
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements.txt
+
+# ポート解放 & 実行コマンド
+EXPOSE 8181
+CMD ["python", "main.py", "--listen", "0.0.0.0", "--port", "8181"]
