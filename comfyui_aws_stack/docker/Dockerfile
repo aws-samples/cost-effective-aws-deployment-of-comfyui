@@ -35,11 +35,9 @@ RUN pyenv install $PYTHON_VERSION && \
     pyenv rehash && \
     pip install --no-cache-dir --upgrade pip setuptools wheel 
 
-# Set the working directory
+# Clone ComfyUI directly
+RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI /home/user/opt/ComfyUI
 WORKDIR /home/user/opt/ComfyUI
-
-# Clone ComfyUI directly into /home/user/opt/ComfyUI
-RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI .
 
 # Create a Python virtual environment in a directory
 ENV TEMP_VENV_PATH=/home/user/opt/ComfyUI/.venv
