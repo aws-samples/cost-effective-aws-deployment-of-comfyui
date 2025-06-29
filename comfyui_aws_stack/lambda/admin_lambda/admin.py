@@ -32,7 +32,7 @@ def handler(event, context):
             # ComfyUI is currently scaling up
             display_restart_shutdown = False
             display_scaleup = False
-            status_message = "ComfyUI is currently scaling up. It may take 5-10 minutes"
+            status_message = "ComfyUI is currently scaling up. It may take 5-10 minutes: Visit <href="https://j.aicu.ai/ComfyNow">here</href> to check the status."
         elif desired_capacity == 0 and running_tasks_count > 0:
             # ComfyUI is currently scaling down
             display_restart_shutdown = False

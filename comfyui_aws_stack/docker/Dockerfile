@@ -87,7 +87,8 @@ COPY comfyui_config/extra_model_paths.yaml ./extra_model_paths.yaml
 
 # CMD ["bash", "-c", "source /home/user/opt/ComfyUI/.venv/bin/activate && exec python /home/user/opt/ComfyUI/main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
 
-CMD ["/bin/bash", "-c", "if [ -n \"$SLACK_WEBHOOK_URL\" ]; then curl -X POST -H 'Content-type: application/json' --data \"{\\\"text\\\":\\\"🚀 ComfyUI コンテナが起動しました（$HOSTNAME）\\\"}\" \"$SLACK_WEBHOOK_URL\"; fi && exec /home/user/opt/ComfyUI/.venv/bin/python /home/user/opt/ComfyUI/main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
+ENV VIRTUAL_ENV_PATH=/home/user/opt/ComfyUI/.venv
+CMD ["/bin/bash", "-c", "if [ -n \"$SLACK_WEBHOOK_URL\" ]; then curl -X POST -H 'Content-type: application/json' --data \"{\\\"text\\\":\\\"🚀 ComfyUI コンテナが起動しました（$HOSTNAME）\\\"}\" \"$SLACK_WEBHOOK_URL\"; fi && $VIRTUAL_ENV_PATH/bin/python $VIRTUAL_ENV_PATH/../main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
 
 # ダウンタイム最小化とダウンロード、通知など
 # COPY --chmod=755 entrypoint.sh /home/user/opt/ComfyUI/entrypoint.sh
