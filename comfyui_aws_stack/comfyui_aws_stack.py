@@ -103,6 +103,7 @@ class ComfyUIStack(Stack):
             timezone=timezone,
             schedule_scale_down=schedule_scale_down,
             schedule_scale_up=schedule_scale_up,
+            desired_capacity=1,
         )
 
         # ECS

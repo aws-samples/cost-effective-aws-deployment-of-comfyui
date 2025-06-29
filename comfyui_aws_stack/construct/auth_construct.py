@@ -12,7 +12,7 @@ from constructs import Construct
 import json
 import urllib
 from typing import List
-
+from aws_cdk import RemovalPolicy  
 
 class AuthConstruct(Construct):
     user_pool: cognito.UserPool
@@ -65,6 +65,7 @@ class AuthConstruct(Construct):
             mfa_second_factor=cognito.MfaSecondFactor(otp=True, sms=True),
             mfa=cognito.Mfa.REQUIRED if not saml_auth_enabled and mfa_required else cognito.Mfa.OPTIONAL,
         )
+        user_pool.apply_removal_policy(RemovalPolicy.RETAIN)
 
         # Add a custom domain for the hosted UI
         user_pool_custom_domain = user_pool.add_domain(

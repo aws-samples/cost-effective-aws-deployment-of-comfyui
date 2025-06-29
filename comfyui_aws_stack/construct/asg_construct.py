@@ -27,6 +27,7 @@ class AsgConstruct(Construct):
             timezone: str,
             schedule_scale_down: str,
             schedule_scale_up: str,
+            desired_capacity: int, # ここを追加
             **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -48,7 +49,9 @@ class AsgConstruct(Construct):
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "AmazonEC2FullAccess"),  # check if less privilege can be given
                 iam.ManagedPolicy.from_aws_managed_policy_name(
-                    "AmazonSSMManagedEC2InstanceDefaultPolicy")
+                    "AmazonSSMManagedEC2InstanceDefaultPolicy"),
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "service-role/AmazonEC2ContainerServiceforEC2Role")
             ]
         )
 
@@ -110,7 +113,7 @@ class AsgConstruct(Construct):
             ),
             min_capacity=0,
             max_capacity=1,
-            desired_capacity=1,
+            desired_capacity=desired_capacity,
             new_instances_protected_from_scale_in=False,
         )
 
