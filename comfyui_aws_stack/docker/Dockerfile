@@ -72,9 +72,15 @@ WORKDIR /home/user/opt/
 RUN git clone https://github.com/aicuai/Book-SD-MasterGuide.git
 
 WORKDIR /home/user/opt/ComfyUI
+   
+# 仮想環境の作成
+RUN python3 -m venv .venv && \
+    .venv/bin/pip install --upgrade pip && \
+    .venv/bin/pip install -r requirements.txt
+
 RUN mkdir -p models/checkpoints models/vae && \
     cp /home/user/opt/Book-SD-MasterGuide/basemodels.txt ./basemodels.sh
-   
+
 
 # Copy the configuration file
 COPY comfyui_config/extra_model_paths.yaml ./extra_model_paths.yaml

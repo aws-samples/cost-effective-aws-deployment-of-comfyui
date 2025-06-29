@@ -1,6 +1,8 @@
 #!/bin/bash
 
 set -e  # エラーで即終了
+exec > >(tee -a /tmp/entrypoint.log) 2>&1
+set -x
 
 VENV_PATH="/home/user/opt/ComfyUI/.venv"
 COMFYUI_PATH="/home/user/opt/ComfyUI"
@@ -22,6 +24,14 @@ notify_slack "🚀 ComfyUI 初回起動中...（$HOSTNAME）"
 
 # ComfyUI 起動（バックグラウンド）
 source "$VENV_PATH/bin/activate"
+
+# venv存在チェック（なければSlack通知＋終了）
+if [ ! -f "$VENV_PATH/bin/activate" ]; then
+  echo "❌ Python venv ($VENV_PATH) が見つかりません！"
+  notify_slack "❌ Python venv ($VENV_PATH) が見つかりません（$HOSTNAME）"
+  exit 2
+fi
+
 python "$COMFYUI_PATH/main.py" \
   --listen 0.0.0.0 \
   --port $PORT \
@@ -45,6 +55,7 @@ if [ -f "$RES_DL_SCRIPT" ]; then
 else
   echo "⚠️ 追加ファイルインストールスクリプトが見つかりません: $RES_DL_SCRIPT"
 fi
+
 
 
 # 通知: 再起動予告
