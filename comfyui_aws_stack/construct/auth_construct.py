@@ -45,6 +45,9 @@ class AuthConstruct(Construct):
         user_pool = cognito.UserPool(
             scope,
             "ComfyUIuserPool",
+            sign_in_aliases=cognito.SignInAliases(
+                email=True
+            ),
             account_recovery=cognito.AccountRecovery.EMAIL_AND_PHONE_WITHOUT_MFA,
             auto_verify=cognito.AutoVerifiedAttrs(email=True, phone=True),
             self_sign_up_enabled=False if saml_auth_enabled else self_sign_up_enabled,

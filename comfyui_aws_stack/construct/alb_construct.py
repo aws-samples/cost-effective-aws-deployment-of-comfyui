@@ -355,7 +355,7 @@ class AlbConstruct(Construct):
         # Add authentication action as the first priority rule
         auth_rule = listener.add_action(
             "AuthenticateRule",
-            priority=30,
+            priority=1, # ここを修正
             action=elb_actions.AuthenticateCognitoAction(
                 next=elbv2.ListenerAction.forward([ecs_target_group]),
                 user_pool=user_pool,
