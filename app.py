@@ -25,6 +25,9 @@ comfy_ui_stack = ComfyUIStack(
     # schedule_scale_down="0 19 * * *",
     # self_sign_up_enabled=True,
     # allowed_sign_up_email_domains=["amazon.com"],
+    host_name="comfyui",
+    domain_name="aicu.jp",
+    hosted_zone_id="Z03523711WHPFZJNX9T5Y",
 )
 
 Aspects.of(app).add(AwsSolutionsChecks(verbose=False))
