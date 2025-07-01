@@ -73,30 +73,63 @@ aws configure
 > [!NOTE]
 > アカウントにGPUインスタンスの割り当てがあることを確認してください。[Service Quota](https://us-west-2.console.aws.amazon.com/servicequotas/home/services/ec2/quotas/L-3819A6DF)に移動し、`All G and VT Spot Instance Requests`を 4 以上に設定してください。
 
-### ComfyUI のデプロイ
+## デプロイ手順
 
-1. (初回のみ) このリポジトリをクローンします (`git clone https://github.com/aws-samples/cost-effective-aws-deployment-of-comfyui.git`)
-2. (初回のみ) リポジトリのディレクトリに移動します (`cd cost-effective-aws-deployment-of-comfyui`)
-3. `make` を実行しデプロイ
+本スタックは、AWS環境上で ComfyUI を自動デプロイするための AWS CDK スタックです。**外部で作成された Cognito ユーザープール**と統合して、認証つきで ComfyUI を運用する構成を前提としています。
 
-Dockerfile のカスタムノードと拡張機能によっては、ComfyUI が使用可能になるまで約 8〜10 分かかります。
+### 事前準備
 
+以下の情報を事前に取得・確認してください：
+
+| パラメータ名               | 説明 |
+|---------------------------|------|
+| `user_pool_id`            | 既存のCognitoユーザープールのID（例：`us-east-1_abc123def`） |
+| `user_pool_client_id`     | 上記ユーザープールに紐づくアプリクライアントID |
+| `user_pool_domain_name`   | ユーザープールのドメイン名（例：`example.auth.us-east-1.amazoncognito.com`） |
+| `domain_name`             | ACM証明書のルートドメイン名（例：`aicu.jp`）|
+| `host_name`               | このComfyUI環境で使うFQDN（例：`comfyui.aicu.jp`） |
+| `slack_webhook_url`       | Slack通知用のWebhook URL（デプロイ後の状態通知等に使用） |
+| `keyPairName`             | EC2インスタンスにアクセスするための既存のキーペア名（例：`comfyui-ssh-key`）|
+
+> Cognitoはスタック外で構築する前提です。CDKで管理する場合は別途設定が必要です。
+
+### デプロイ
+
+以下のコマンドを実行して、CDKスタックをデプロイします：
+
+```bash
+cdk deploy \
+  -c user_pool_id=<YourUserPoolId> \
+  -c user_pool_client_id=<YourUserPoolClientId> \
+  -c user_pool_domain_name=<YourCognitoDomain> \
+  -c domain_name=<YourRootDomain> \
+  -c host_name=<YourHostFQDN> \
+  -c slack_webhook_url="<YourSlackWebhook>" \
+  -c keyPairName=<YourKeyPairName> \
+  --profile <YourAWSProfile> \
+  --region <AWSRegion>
 ```
-✅  ComfyUIStack
 
-✨  Deployment time: 579.07s
+### スタックが `DELETE_FAILED` になる場合の対処
 
-Outputs:
-ComfyUIStack.CognitoDomainName = comfyui-alb-auth-XXXXXXX
-ComfyUIStack.Endpoint = ComfyUiALB-XXXXX.uw-west-2.elb.amazonaws.com
-ComfyUIStack.UserPoolId = us-west-2_XXXXXXX
-Stack ARN:
-arn:aws:cloudformation:[us-east-1]:[your-account-id]:stack/ComfyUIStack/[uuid]
+CloudFormationスタックが `DELETE_FAILED` 状態で停止している場合、以下のリソースが残っている可能性があります：
 
-✨  Total time: 582.53s
+- ECSタスクが残存している
+- ALBターゲットグループが削除できていない
+
+**対処方法：**
+1. ECSコンソールから該当クラスタのタスクを停止
+2. サービスも削除
+3. CloudFormationから該当スタックを手動で削除（必要に応じて `retain` ポリシーのリソースを確認）
+
+### よくある注意点
+
+- `keyName` はCDK v2では非推奨になっており、`keyPair` を使用します（自動判定されます）。
+- 生成されたEC2インスタンスへSSHする際は、該当 `.pem` ファイルをローカルに保存して、以下のように接続してください：
+
+```bash
+ssh -i comfyui-ssh-key.pem ec2-user@<PublicIP>
 ```
-
-`ComfyUIStack.Endpoint` の出力値からアプリケーションにアクセスできます。
 
 ### モデルのアップロード
 

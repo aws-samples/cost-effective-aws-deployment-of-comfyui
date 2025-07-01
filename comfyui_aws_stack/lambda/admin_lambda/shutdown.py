@@ -29,8 +29,7 @@ def handler(event, context):
             # Update the desired capacity of the ASG
             response = asg_client.set_desired_capacity(
                 AutoScalingGroupName=asg_name,
-                DesiredCapacity=0,
-                HonorCooldown=False
+                DesiredCapacity=0
             )
             message = "ComfyUI is shutting down"
         else:

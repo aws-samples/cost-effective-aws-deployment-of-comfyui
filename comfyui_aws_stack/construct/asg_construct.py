@@ -70,6 +70,7 @@ class AsgConstruct(Construct):
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(
                 hardware_type=ecs.AmiHardwareType.GPU
             ),
+            key_pair=ec2.KeyPair.from_key_pair_name(scope, "KeyPair", "comfyui-ssh-key"),
             role=ec2_role,
             security_group=asg_security_group,
             user_data=user_data_script,
@@ -146,7 +147,6 @@ class AsgConstruct(Construct):
                 "ScalingAction",
                 auto_scaling_group=auto_scaling_group,
                 adjustment_type=autoscaling.AdjustmentType.CHANGE_IN_CAPACITY,
-                cooldown=Duration.seconds(120)
             )
             # Add scaling adjustments
             scaling_action.add_adjustment(
