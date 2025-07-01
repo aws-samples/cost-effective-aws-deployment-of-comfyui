@@ -31,6 +31,7 @@ class EcsConstruct(Construct):
             region: str,
             user_pool: cognito.UserPool,
             user_pool_client: cognito.UserPoolClient,
+            comfyui_image_tag: str,
             **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -111,7 +112,7 @@ class EcsConstruct(Construct):
             "ComfyUIContainer",
             image=ecs.ContainerImage.from_ecr_repository(
                 docker_image_asset.repository,
-                docker_image_asset.image_tag
+                comfyui_image_tag
             ),
             gpu_count=1,
             memory_reservation_mib=15000,

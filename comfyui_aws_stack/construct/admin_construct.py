@@ -36,6 +36,7 @@ class AdminConstruct(Construct):
             service: ecs.IService,
             auto_scaling_group: autoscaling.AutoScalingGroup,
             user_pool_logout_url: str,
+            slack_webhook_url: str,
             **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 

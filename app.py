@@ -38,6 +38,7 @@ comfy_ui_stack = ComfyUIStack(
     user_pool_id=ctx("user_pool_id"),
     user_pool_client_id=ctx("user_pool_client_id"),
     slack_webhook_url=ctx("slack_webhook_url"),
+    user_pool_domain_name=ctx("user_pool_domain_name"),
 )
 
 Aspects.of(app).add(AwsSolutionsChecks(verbose=False))
