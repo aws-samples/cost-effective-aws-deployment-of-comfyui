@@ -44,6 +44,10 @@ class ComfyUIStack(Stack):
                  host_name: str = None,
                  domain_name: str = None,
                  hosted_zone_id: str = None,
+                 slack_webhook_url: str = None,
+                 user_pool_id: str = None,
+                 user_pool_client_id: str = None,
+                 comfyui_image_tag: str = None,
                  **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -89,6 +93,8 @@ class ComfyUIStack(Stack):
             self_sign_up_enabled=self_sign_up_enabled,
             mfa_required=mfa_required,
             allowed_sign_up_email_domains=allowed_sign_up_email_domains,
+            user_pool_id=user_pool_id,
+            user_pool_client_id=user_pool_client_id,
         )
 
         # ASG
@@ -118,6 +124,7 @@ class ComfyUIStack(Stack):
             region=region,
             user_pool=auth_construct.user_pool,
             user_pool_client=auth_construct.user_pool_client,
+            comfyui_image_tag=comfyui_image_tag,
         )
 
         # Admin Lambda
@@ -129,6 +136,7 @@ class ComfyUIStack(Stack):
             service=ecs_construct.service,
             auto_scaling_group=asg_construct.auto_scaling_group,
             user_pool_logout_url=auth_construct.user_pool_logout_url,
+            slack_webhook_url=slack_webhook_url,
         )
 
         # Associate resources to ALB

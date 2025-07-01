@@ -22,6 +22,10 @@ class AdminConstruct(Construct):
     lambda_shutdown_target_group: elbv2.ApplicationTargetGroup
     lambda_scaleup_target_group: elbv2.ApplicationTargetGroup
     lambda_signout_target_group: elbv2.ApplicationTargetGroup
+    admin_lambda: lambda_.Function
+    shutdown_lambda: lambda_.Function
+    scaleup_trigger_lambda: lambda_.Function
+    signout_lambda: lambda_.Function
 
     def __init__(
             self,
@@ -244,6 +248,10 @@ class AdminConstruct(Construct):
         self.lambda_shutdown_target_group = lambda_shutdown_target_group
         self.lambda_scaleup_target_group = lambda_scaleup_target_group
         self.lambda_signout_target_group = lambda_signout_target_group
+        self.admin_lambda = admin_lambda
+        self.shutdown_lambda = shutdown_lambda
+        self.scaleup_trigger_lambda = scaleup_trigger_lambda
+        self.signout_lambda = signout_lambda
 
     def add_environments(self,
                          lambda_admin_rule: elbv2.ApplicationListenerRule,

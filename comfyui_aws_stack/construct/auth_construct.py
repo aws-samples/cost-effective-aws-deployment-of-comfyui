@@ -34,12 +34,24 @@ class AuthConstruct(Construct):
             self_sign_up_enabled: bool,
             mfa_required: bool,
             allowed_sign_up_email_domains: List[str],
+            user_pool_id: str = None,
+            user_pool_client_id: str = None,
             **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         # Sets up the cognito infrastructure with the user pool, custom domain and app client for use by the ALB.
         cognito_custom_domain = f"comfyui-alb-auth-{suffix}"
         application_dns_name = f"{host_name}.{domain_name}" if host_name and domain_name else alb.load_balancer_dns_name
+
+        # If user_pool_id and user_pool_client_id are provided, skip creation and import them
+        if user_pool_id and user_pool_client_id:
+            self.user_pool = cognito.UserPool.from_user_pool_id(self, "ImportedUserPool", user_pool_id)
+            self.user_pool_client = cognito.UserPoolClient.from_user_pool_client_id(self, "ImportedUserPoolClient", user_pool_client_id)
+            self.user_pool_custom_domain = None  # Custom domain cannot be imported
+            self.application_dns_name = application_dns_name
+            self.user_pool_logout_url = ""
+            self.user_pool_user_info_url = ""
+            return
 
         # Create the user pool that holds our users
         user_pool = cognito.UserPool(
