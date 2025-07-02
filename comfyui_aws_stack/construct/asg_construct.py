@@ -92,27 +92,21 @@ class AsgConstruct(Construct):
                     on_demand_base_capacity=0,
                     on_demand_percentage_above_base_capacity=0 if use_spot else 100,
                     on_demand_allocation_strategy=autoscaling.OnDemandAllocationStrategy.LOWEST_PRICE,
-                    spot_allocation_strategy=autoscaling.SpotAllocationStrategy.LOWEST_PRICE,
+                    spot_allocation_strategy=autoscaling.SpotAllocationStrategy.CAPACITY_OPTIMIZED, #確保できないのでLOWEST_PRICE→CAPACITY_OPTIMIZEDに変更
                     spot_instance_pools=1,
                     spot_max_price=spot_price,
                 ),
                 launch_template=launchTemplate,
                 launch_template_overrides=[
-                    autoscaling.LaunchTemplateOverrides(
-                        instance_type=ec2.InstanceType("g4dn.xlarge")),
-                    autoscaling.LaunchTemplateOverrides(
-                        instance_type=ec2.InstanceType("g5.xlarge")),
-                    autoscaling.LaunchTemplateOverrides(
-                        instance_type=ec2.InstanceType("g6.xlarge")),
-                    autoscaling.LaunchTemplateOverrides(
-                        instance_type=ec2.InstanceType("g4dn.2xlarge")),
-                    autoscaling.LaunchTemplateOverrides(
-                        instance_type=ec2.InstanceType("g5.2xlarge")),
-                    autoscaling.LaunchTemplateOverrides(
-                        instance_type=ec2.InstanceType("g6.2xlarge")),
+                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g5.2xlarge")),
+                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g6.2xlarge")),
+                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g5.xlarge")),
+                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g6.xlarge")),
+                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g4dn.2xlarge")),
+                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g4dn.xlarge")),
                 ],
             ),
-            min_capacity=0,
+            min_capacity=1,
             max_capacity=1,
             desired_capacity=desired_capacity,
             new_instances_protected_from_scale_in=False,

@@ -28,7 +28,7 @@ class ComfyUIStack(Stack):
                  use_spot: bool = True,
                  spot_price: str = "0.752",
                  # Auto Scaling
-                 auto_scale_down: bool = True,
+                 auto_scale_down: bool = False,
                  schedule_auto_scaling: bool = False,
                  timezone: str = "UTC",
                  schedule_scale_up: str = "0 9 * * 1-5",
