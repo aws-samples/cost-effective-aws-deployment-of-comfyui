@@ -276,6 +276,45 @@ npx cdk destroy
 | ロギング           | -              | -              | -               | $3            |
 | 月額合計           | $137           | $205           | $251            | $498          |
 
+### cdk.context.json
+
+
+# 
+
+毎日18時〜26時（翌2時）にスケールアップし、それ以外の時間も最低1台は稼働し続ける設定
+asg_construct.py
+```
+        # Scheduled Scaling:
+        # 平日・休日問わず、毎日18時〜翌2時（26時）にスケールアップ、それ以外はスケールダウン
+        if schedule_auto_scaling:
+            # 平日・休日問わず、毎日18時〜翌2時（26時）にスケールアップ、それ以外はスケールダウン
+            for day in range(0, 7):  # 0=Sun, ..., 6=Sat
+                # スケールアップ: 18:00 JST
+                autoscaling.ScheduledAction(
+                    scope,
+                    f"ScaleUpDay{day}",
+                    auto_scaling_group=auto_scaling_group,
+                    desired_capacity=1,
+                    time_zone=timezone,
+                    schedule=autoscaling.Schedule.cron(
+                        week_day=str(day), hour="18", minute="0"
+                    )
+                )
+                # スケールダウン: 翌2:00 JST（26時）
+                autoscaling.ScheduledAction(
+                    scope,
+                    f"ScaleDownDay{day}",
+                    auto_scaling_group=auto_scaling_group,
+                    desired_capacity=1,
+                    time_zone=timezone,
+                    schedule=autoscaling.Schedule.cron(
+                        week_day=str((day + 1) % 7), hour="2", minute="0"
+                    )
+                )
+
+```
+
+
 ### CDK 便利なコマンド
 
 * `npx run cdk ls`          アプリ内のすべてのスタックを一覧表示

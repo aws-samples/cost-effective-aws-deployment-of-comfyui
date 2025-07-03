@@ -5,7 +5,7 @@
   "comfyui_image_tag": "0.3.41",
   "instance_type": "g5.2xlarge",
   "use_spot": true,
-  "spot_price": "0.425",
+  "spot_price": "0.5",
   "auto_scale_down": true,
   "schedule_auto_scaling": true,
   "timezone": "Asia/Tokyo",
