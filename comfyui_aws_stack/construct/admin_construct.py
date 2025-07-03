@@ -46,21 +46,46 @@ class AdminConstruct(Construct):
             managed_policies=[
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaBasicExecutionRole"),
-                iam.ManagedPolicy.from_aws_managed_policy_name(
-                    "AutoScalingFullAccess"),
             ]
         )
         lambda_role.add_to_policy(iam.PolicyStatement(
-            actions=["ecs:DescribeServices",
-                     "ecs:ListTasks",
-                     "elasticloadbalancing:ModifyListener",
-                     "elasticloadbalancing:ModifyRule",
-                     "elasticloadbalancing:DescribeRules",
-                     "elasticloadbalancing:DescribeListeners",
-                     "ecs:DescribeServices",
-                     "ecs:UpdateService",
-                     "ssm:SendCommand"],
-            resources=["*"]
+            actions=[
+                "autoscaling:SetDesiredCapacity",
+                "autoscaling:DescribeAutoScalingGroups"
+            ],
+            resources=[auto_scaling_group.auto_scaling_group_arn]
+        ))
+        lambda_role.add_to_policy(iam.PolicyStatement(
+            actions=[
+                "ecs:DescribeServices",
+                "ecs:UpdateService",
+                "ecs:ListTasks"
+            ],
+            resources=[
+                service.service_arn,
+                f"arn:aws:ecs:{scope.region}:{scope.account}:task/{cluster.cluster_name}/*"
+            ]
+        ))
+        lambda_role.add_to_policy(iam.PolicyStatement(
+            actions=[
+                "elasticloadbalancing:ModifyListener",
+                "elasticloadbalancing:ModifyRule",
+                "elasticloadbalancing:DescribeRules",
+                "elasticloadbalancing:DescribeListeners"
+            ],
+            resources=["*"]  # ALB Listener/Rule ARNs are not easily available, using wildcard for now
+        ))
+        lambda_role.add_to_policy(iam.PolicyStatement(
+            actions=["ssm:SendCommand"],
+            resources=[
+                f"arn:aws:ec2:{scope.region}:{scope.account}:instance/*",
+                "arn:aws:ssm:*:*:document/AWS-RunShellScript"
+            ],
+            conditions={
+                "StringEquals": {
+                    "aws:ResourceTag/aws:autoscaling:groupName": auto_scaling_group.auto_scaling_group_name
+                }
+            }
         ))
 
         admin_lambda = lambda_.Function(

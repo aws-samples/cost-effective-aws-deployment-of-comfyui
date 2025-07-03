@@ -48,12 +48,28 @@ class AsgConstruct(Construct):
             assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"),
             managed_policies=[
                 iam.ManagedPolicy.from_aws_managed_policy_name(
-                    "AmazonEC2FullAccess"),  # check if less privilege can be given
-                iam.ManagedPolicy.from_aws_managed_policy_name(
                     "AmazonSSMManagedEC2InstanceDefaultPolicy"),
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AmazonEC2ContainerServiceforEC2Role")
-            ]
+            ],
+            inline_policies={
+                "EbsManagementPolicy": iam.PolicyDocument(
+                    statements=[
+                        iam.PolicyStatement(
+                            actions=[
+                                "ec2:CreateVolume",
+                                "ec2:AttachVolume",
+                                "ec2:DetachVolume",
+                                "ec2:DeleteVolume",
+                                "ec2:CreateTags",
+                                "ec2:DescribeVolumes",
+                                "ec2:DescribeInstances"
+                            ],
+                            resources=["*"]
+                        )
+                    ]
+                )
+            }
         )
 
         user_data_script = ec2.UserData.for_linux()
