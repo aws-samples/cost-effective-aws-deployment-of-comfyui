@@ -75,6 +75,8 @@ class EcsConstruct(Construct):
             network_mode=ecr_assets.NetworkMode.custom(
                 "sagemaker") if is_sagemaker_studio else None
         )
+        # ここでリポジトリのPull権限を付与する
+        docker_image_asset.repository.grant_pull(task_exec_role)
 
         # CloudWatch Logs Group
         log_group = logs.LogGroup(
@@ -110,10 +112,12 @@ class EcsConstruct(Construct):
         # Add container to the task definition
         container = task_definition.add_container(
             "ComfyUIContainer",
-            image=ecs.ContainerImage.from_ecr_repository(
-                docker_image_asset.repository,
-                comfyui_image_tag
-            ),
+#            image=ecs.ContainerImage.from_ecr_repository(
+#                docker_image_asset.repository,
+#                comfyui_image_tag
+#            ),
+# After
+            image=ecs.ContainerImage.from_docker_image_asset(docker_image_asset),
             gpu_count=1,
             memory_reservation_mib=15000,
             logging=ecs.LogDriver.aws_logs(

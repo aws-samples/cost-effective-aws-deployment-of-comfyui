@@ -19,5 +19,7 @@
   "user_pool_id": "us-east-1_q0QdMtVte",
   "user_pool_client_id": "5mb5u2q82a1jbdpl8ndic1rmqd",
   "user_pool_domain": "aicu-comfyui.auth.us-east-1.amazoncognito.com",
-  "user_pool_domain_name": "aicu-comfyui.auth.us-east-1.amazoncognito.com"
+  "user_pool_domain_name": "aicu-comfyui.auth.us-east-1.amazoncognito.com",
+  "lp_fallback_enabled": true,
+  "lp_fallback_url": "https://j.aicu.ai/ComfyNow"
 }
