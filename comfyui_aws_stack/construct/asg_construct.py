@@ -10,7 +10,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 from cdk_nag import NagSuppressions
-
+from typing import Optional
 
 class AsgConstruct(Construct):
     auto_scaling_group: autoscaling.AutoScalingGroup
@@ -27,8 +27,10 @@ class AsgConstruct(Construct):
             timezone: str,
             schedule_scale_down: str,
             schedule_scale_up: str,
+            desired_capacity: Optional[int] = None,  # ★ これを明示的に追加
             **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
+        self.desired_capacity = desired_capacity  # ★ 自分で保持。必要に応じて .desired_capacity を内部で使いながら、AutoScalingGroup の min_capacity / max_capacity などに反映するのが正しい使い方です。
 
         # Create Auto Scaling Group Security Group
         asg_security_group = ec2.SecurityGroup(

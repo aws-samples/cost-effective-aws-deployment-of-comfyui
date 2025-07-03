@@ -294,7 +294,6 @@ asg_construct.py
                     scope,
                     f"ScaleUpDay{day}",
                     auto_scaling_group=auto_scaling_group,
-                    desired_capacity=1,
                     time_zone=timezone,
                     schedule=autoscaling.Schedule.cron(
                         week_day=str(day), hour="18", minute="0"
@@ -345,6 +344,36 @@ Dockerfile には ComfyUI と ComfyUI-Manager のみが含まれています。�
 ## セキュリティ
 
 詳細は [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) を参照してください。
+
+## CDK コンテキスト設定 (`cdk.context.json`)
+
+このリポジトリでは、CDK によるデプロイ構成を簡略化するために `cdk.context.json` が用意されています。このファイルは、CDK アプリケーションの実行時に利用される各種設定値を定義しています。
+
+以下に主要なパラメータとその意味を示します：
+
+| パラメータ名 | 説明 |
+|-------------|------|
+| `availability-zones:account=...` | 使用可能なアベイラビリティゾーン（デプロイ先リージョンに応じて変化） |
+| `comfyui_image_tag` | 使用する ComfyUI Docker イメージのタグ（例：`0.3.41`） |
+| `instance_type` | EC2 インスタンスのタイプ（例：`g5.2xlarge`） |
+| `use_spot` | スポットインスタンスを使用するかどうか（true/false） |
+| `spot_price` | スポットインスタンスの最大価格（USD 単位） |
+| `auto_scale_down` | 使用していないときに自動でスケールダウンするか |
+| `schedule_auto_scaling` | スケジュールベースの自動スケーリングを有効にするか |
+| `timezone` | スケジュールスケーリングで使用するタイムゾーン（例：`Asia/Tokyo`） |
+| `schedule_scale_up` | スケールアップする Cron スケジュール（例：`0 18 * * 2`） |
+| `schedule_scale_down` | スケールダウンする Cron スケジュール（例：`0 2 * * 3`） |
+| `self_sign_up_enabled` | Cognito における自己サインアップの許可（true/false） |
+| `allowed_sign_up_email_domains` | サインアップを許可するメールドメイン（リスト） |
+| `host_name` | デプロイされるホスト名（FQDNの一部） |
+| `domain_name` | ACM 証明書などに使うベースドメイン |
+| `hosted_zone_id` | Route 53 のホストゾーン ID |
+| `user_pool_id` | 使用する Cognito User Pool の ID |
+| `user_pool_client_id` | Cognito アプリクライアントの ID |
+| `user_pool_domain` | Cognito ドメイン（例：`example.auth.us-east-1.amazoncognito.com`） |
+| `user_pool_domain_name` | 同上（CDK の一部モジュールで必要な形式） |
+
+このファイルは `cdk deploy` 時に自動的に読み込まれ、環境に応じた適切なリソースが生成されます。
 
 ## ライセンス
 
