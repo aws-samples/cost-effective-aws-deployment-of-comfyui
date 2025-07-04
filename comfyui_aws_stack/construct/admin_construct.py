@@ -22,6 +22,10 @@ class AdminConstruct(Construct):
     lambda_shutdown_target_group: elbv2.ApplicationTargetGroup
     lambda_scaleup_target_group: elbv2.ApplicationTargetGroup
     lambda_signout_target_group: elbv2.ApplicationTargetGroup
+    admin_lambda: lambda_.Function
+    shutdown_lambda: lambda_.Function
+    scaleup_trigger_lambda: lambda_.Function
+    signout_lambda: lambda_.Function
 
     def __init__(
             self,
@@ -32,6 +36,7 @@ class AdminConstruct(Construct):
             service: ecs.IService,
             auto_scaling_group: autoscaling.AutoScalingGroup,
             user_pool_logout_url: str,
+            slack_webhook_url: str,
             **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -41,21 +46,46 @@ class AdminConstruct(Construct):
             managed_policies=[
                 iam.ManagedPolicy.from_aws_managed_policy_name(
                     "service-role/AWSLambdaBasicExecutionRole"),
-                iam.ManagedPolicy.from_aws_managed_policy_name(
-                    "AutoScalingFullAccess"),
             ]
         )
         lambda_role.add_to_policy(iam.PolicyStatement(
-            actions=["ecs:DescribeServices",
-                     "ecs:ListTasks",
-                     "elasticloadbalancing:ModifyListener",
-                     "elasticloadbalancing:ModifyRule",
-                     "elasticloadbalancing:DescribeRules",
-                     "elasticloadbalancing:DescribeListeners",
-                     "ecs:DescribeServices",
-                     "ecs:UpdateService",
-                     "ssm:SendCommand"],
-            resources=["*"]
+            actions=[
+                "autoscaling:SetDesiredCapacity",
+                "autoscaling:DescribeAutoScalingGroups"
+            ],
+            resources=[auto_scaling_group.auto_scaling_group_arn]
+        ))
+        lambda_role.add_to_policy(iam.PolicyStatement(
+            actions=[
+                "ecs:DescribeServices",
+                "ecs:UpdateService",
+                "ecs:ListTasks"
+            ],
+            resources=[
+                service.service_arn,
+                f"arn:aws:ecs:{scope.region}:{scope.account}:task/{cluster.cluster_name}/*"
+            ]
+        ))
+        lambda_role.add_to_policy(iam.PolicyStatement(
+            actions=[
+                "elasticloadbalancing:ModifyListener",
+                "elasticloadbalancing:ModifyRule",
+                "elasticloadbalancing:DescribeRules",
+                "elasticloadbalancing:DescribeListeners"
+            ],
+            resources=["*"]  # ALB Listener/Rule ARNs are not easily available, using wildcard for now
+        ))
+        lambda_role.add_to_policy(iam.PolicyStatement(
+            actions=["ssm:SendCommand"],
+            resources=[
+                f"arn:aws:ec2:{scope.region}:{scope.account}:instance/*",
+                "arn:aws:ssm:*:*:document/AWS-RunShellScript"
+            ],
+            conditions={
+                "StringEquals": {
+                    "aws:ResourceTag/aws:autoscaling:groupName": auto_scaling_group.auto_scaling_group_name
+                }
+            }
         ))
 
         admin_lambda = lambda_.Function(
@@ -244,6 +274,10 @@ class AdminConstruct(Construct):
         self.lambda_shutdown_target_group = lambda_shutdown_target_group
         self.lambda_scaleup_target_group = lambda_scaleup_target_group
         self.lambda_signout_target_group = lambda_signout_target_group
+        self.admin_lambda = admin_lambda
+        self.shutdown_lambda = shutdown_lambda
+        self.scaleup_trigger_lambda = scaleup_trigger_lambda
+        self.signout_lambda = signout_lambda
 
     def add_environments(self,
                          lambda_admin_rule: elbv2.ApplicationListenerRule,

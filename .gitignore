@@ -11,7 +11,6 @@ cfn.yaml
 dockerfile_*
 comfyui_aws_stack/comfy_ui_aws_example_stack_https.py
 comfyui_config/provisioning.sh
-cdk.context.json
 comfyui_aws_stack/comfyui-instructions
 comfyui_models
 tmp

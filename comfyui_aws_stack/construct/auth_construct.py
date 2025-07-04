@@ -12,7 +12,7 @@ from constructs import Construct
 import json
 import urllib
 from typing import List
-
+from aws_cdk import RemovalPolicy  
 
 class AuthConstruct(Construct):
     user_pool: cognito.UserPool
@@ -34,6 +34,8 @@ class AuthConstruct(Construct):
             self_sign_up_enabled: bool,
             mfa_required: bool,
             allowed_sign_up_email_domains: List[str],
+            user_pool: cognito.UserPool = None,
+            user_pool_client: cognito.UserPoolClient = None,
             **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -41,10 +43,54 @@ class AuthConstruct(Construct):
         cognito_custom_domain = f"comfyui-alb-auth-{suffix}"
         application_dns_name = f"{host_name}.{domain_name}" if host_name and domain_name else alb.load_balancer_dns_name
 
+        # Try importing existing Cognito resources from context
+        user_pool_id_ctx = self.node.try_get_context("user_pool_id")
+        user_pool_client_id_ctx = self.node.try_get_context("user_pool_client_id")
+        user_pool_domain_ctx = self.node.try_get_context("user_pool_domain_name")
+
+        if user_pool_id_ctx and user_pool_client_id_ctx and user_pool_domain_ctx:
+            self.user_pool = cognito.UserPool.from_user_pool_id(
+                self, "ImportedUserPool", user_pool_id_ctx)
+            self.user_pool_client = cognito.UserPoolClient.from_user_pool_client_id(
+                self, "ImportedUserPoolClient", user_pool_client_id_ctx)
+            self.user_pool_custom_domain = None
+            self.application_dns_name = application_dns_name
+            redirect_uri = urllib.parse.quote(f"https://{application_dns_name}")
+            self.user_pool_logout_url = f"https://{user_pool_domain_ctx}/logout?" \
+                                        f"client_id={user_pool_client_id_ctx}&" \
+                                        f"logout_uri={redirect_uri}"
+            self.user_pool_user_info_url = f"https://{user_pool_domain_ctx}/oauth2/userInfo"
+            return
+
+        # If user_pool and user_pool_client are provided, skip creation and use them directly
+        if user_pool and user_pool_client:
+            self.user_pool = user_pool
+            self.user_pool_client = user_pool_client
+            self.application_dns_name = application_dns_name
+
+            # If domain is passed in context, construct logout and userinfo URLs
+            user_pool_domain = self.node.try_get_context("user_pool_domain")
+            if user_pool_domain:
+                self.user_pool_custom_domain = None
+                redirect_uri = urllib.parse.quote(f"https://{application_dns_name}")
+                self.user_pool_logout_url = f"https://{user_pool_domain}/logout?" \
+                                            f"client_id={user_pool_client.user_pool_client_id}&" \
+                                            f"logout_uri={redirect_uri}"
+                self.user_pool_user_info_url = f"https://{user_pool_domain}/oauth2/userInfo"
+            else:
+                self.user_pool_custom_domain = None
+                self.user_pool_logout_url = ""
+                self.user_pool_user_info_url = ""
+
+            return
+
         # Create the user pool that holds our users
         user_pool = cognito.UserPool(
             scope,
             "ComfyUIuserPool",
+            sign_in_aliases=cognito.SignInAliases(
+                email=True
+            ),
             account_recovery=cognito.AccountRecovery.EMAIL_AND_PHONE_WITHOUT_MFA,
             auto_verify=cognito.AutoVerifiedAttrs(email=True, phone=True),
             self_sign_up_enabled=False if saml_auth_enabled else self_sign_up_enabled,
@@ -65,6 +111,7 @@ class AuthConstruct(Construct):
             mfa_second_factor=cognito.MfaSecondFactor(otp=True, sms=True),
             mfa=cognito.Mfa.REQUIRED if not saml_auth_enabled and mfa_required else cognito.Mfa.OPTIONAL,
         )
+        user_pool.apply_removal_policy(RemovalPolicy.RETAIN)
 
         # Add a custom domain for the hosted UI
         user_pool_custom_domain = user_pool.add_domain(
@@ -100,7 +147,7 @@ class AuthConstruct(Construct):
 
         # Logout URLs and redirect URIs can't be set in CDK constructs natively ...yet
         user_pool_client_cf: cognito.CfnUserPoolClient = user_pool_client.node.default_child
-        user_pool_client_cf.logout_ur_ls = [
+        user_pool_client_cf.logout_urls = [
             # This is here to allow a redirect to the login page
             # after the logout has been completed
             f"https://{application_dns_name}"
@@ -132,6 +179,30 @@ class AuthConstruct(Construct):
                 cognito.UserPoolOperation.PRE_SIGN_UP,
                 checkEmailDomainFunction
             )
+
+        # Slack notify lambda (for challenge and success notifications)
+        slack_notify_function = lambda_.Function(
+            scope,
+            "SlackNotifyFunction",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="slack_notify.handler",
+            code=lambda_.Code.from_asset(
+                "./comfyui_aws_stack/lambda/slack_notify_lambda"),
+            timeout=Duration.seconds(amount=30),
+            environment={
+                "SLACK_WEBHOOK_URL": self.node.try_get_context("slack_webhook_url"),
+            }
+        )
+
+        # Add Slack notify function to challenge and success triggers
+        user_pool.add_trigger(
+            cognito.UserPoolOperation.USER_MIGRATION,  # or use CUSTOM_MESSAGE if preferred
+            slack_notify_function
+        )
+        user_pool.add_trigger(
+            cognito.UserPoolOperation.POST_AUTHENTICATION,
+            slack_notify_function
+        )
 
         # Cognito Post Deploy fix
         post_process_function = lambda_.Function(

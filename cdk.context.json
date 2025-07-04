@@ -1,0 +1,25 @@
+{
+  "availability-zones:account=762925030174:region=us-east-1": [
+    "us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d", "us-east-1e", "us-east-1f"
+  ],
+  "comfyui_image_tag": "0.3.41",
+  "instance_type": "g5.2xlarge",
+  "use_spot": true,
+  "spot_price": "0.5",
+  "auto_scale_down": true,
+  "schedule_auto_scaling": true,
+  "timezone": "Asia/Tokyo",
+  "schedule_scale_up": "0 18 * * 2",
+  "schedule_scale_down": "0 2 * * 3",
+  "self_sign_up_enabled": false,
+  "allowed_sign_up_email_domains": [],
+  "host_name": "comfyui",
+  "domain_name": "aicu.jp",
+  "hosted_zone_id": "Z03523711WHPFZJNX9T5Y",
+  "user_pool_id": "us-east-1_q0QdMtVte",
+  "user_pool_client_id": "5mb5u2q82a1jbdpl8ndic1rmqd",
+  "user_pool_domain": "aicu-comfyui.auth.us-east-1.amazoncognito.com",
+  "user_pool_domain_name": "aicu-comfyui.auth.us-east-1.amazoncognito.com",
+  "lp_fallback_enabled": true,
+  "lp_fallback_url": "https://j.aicu.ai/ComfyNow"
+}

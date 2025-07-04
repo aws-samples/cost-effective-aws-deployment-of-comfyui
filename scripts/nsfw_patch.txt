@@ -1,0 +1,78 @@
+--- a/main.py
++++ b/main.py
+@@ -25,6 +25,13 @@
+ import asyncio--- main.py
++++ main.py
+@@ -27,6 +27,13 @@
+ import shutil
+ import threading
+ import gc
++
++import re
++import requests
++
++nsfw_keywords = [
++    "nsfw", "nude", "naked", "sex", "vagina", "penis", "nipples", "cum", "breasts", "pussy", "anal", "xxx"
++]
++nsfw_pattern = re.compile(r'\b(?:' + '|'.join(map(re.escape, nsfw_keywords)) + r')\b', re.IGNORECASE)
+
+ if os.name == "nt":
+     logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
+@@ def prompt_worker(q, server_instance):
+         queue_item = q.get(timeout=timeout)
+         if queue_item is not None:
+             item, item_id = queue_item
+             execution_start_time = time.perf_counter()
+             prompt_id = item[1]
+             server_instance.last_prompt_id = prompt_id
++
++            prompt_text = item[2].get("prompt", "")
++            if isinstance(prompt_text, str) and nsfw_pattern.search(prompt_text):
++                nsfw_message = f"⚠️ NSFW prompt detected: {prompt_text}"
++                logging.warning(nsfw_message)
++                try:
++                    requests.post(
++                        "https://hooks.slack.com/services/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",
++                        json={"text": nsfw_message},
++                        timeout=3
++                    )
++                except Exception as e:
++                    logging.error(f"Slack notification failed: {e}")
+
+             e.execute(item[2], prompt_id, item[3], item[4])
+ import shutil
+ import threading
+ import gc
++
++import re
++import requests
++
++nsfw_keywords = [
++    "nsfw", "nude", "naked", "sex", "vagina", "penis", "nipples", "cum", "breasts", "pussy", "anal", "xxx"
++]
++nsfw_pattern = re.compile(r'\b(?:' + '|'.join(map(re.escape, nsfw_keywords)) + r')\b', re.IGNORECASE)
+
+ if os.name == "nt":
+     logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
+@@ def prompt_worker(q, server_instance):
+         queue_item = q.get(timeout=timeout)
+         if queue_item is not None:
+             item, item_id = queue_item
+             execution_start_time = time.perf_counter()
+             prompt_id = item[1]
+             server_instance.last_prompt_id = prompt_id
++
++            prompt_text = item[2].get("prompt", "")
++            if isinstance(prompt_text, str) and nsfw_pattern.search(prompt_text):
++                nsfw_message = f"⚠️ NSFW prompt detected: {prompt_text}"
++                logging.warning(nsfw_message)
++                try:
++                    requests.post(
++                        "https://hooks.slack.com/services/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",
++                        json={"text": nsfw_message},
++                        timeout=3
++                    )
++                except Exception as e:
++                    logging.error(f"Slack notification failed: {e}")
+
+             e.execute(item[2], prompt_id, item[3], item[4])

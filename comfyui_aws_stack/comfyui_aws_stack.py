@@ -2,6 +2,7 @@ from aws_cdk import (
     Stack,
     CfnOutput
 )
+from aws_cdk import aws_cognito as cognito
 from constructs import Construct
 
 from comfyui_aws_stack.construct.vpc_construct import VpcConstruct
@@ -27,7 +28,7 @@ class ComfyUIStack(Stack):
                  use_spot: bool = True,
                  spot_price: str = "0.752",
                  # Auto Scaling
-                 auto_scale_down: bool = True,
+                 auto_scale_down: bool = False,
                  schedule_auto_scaling: bool = False,
                  timezone: str = "UTC",
                  schedule_scale_up: str = "0 9 * * 1-5",
@@ -44,8 +45,25 @@ class ComfyUIStack(Stack):
                  host_name: str = None,
                  domain_name: str = None,
                  hosted_zone_id: str = None,
+                 slack_webhook_url: str = None,
+                 user_pool_id: str = None,
+                 user_pool_client_id: str = None,
+                 user_pool_domain_name: str = None,
+                 comfyui_image_tag: str = None,
                  **kwargs) -> None:
-        super().__init__(scope, construct_id, **kwargs)
+        env = kwargs.pop("env", None)
+        super().__init__(scope, construct_id, env=env)
+
+        user_pool = cognito.UserPool.from_user_pool_id(
+            self, "ImportedUserPool", user_pool_id
+        )
+        user_pool_client = cognito.UserPoolClient.from_user_pool_client_id(
+            self, "ImportedUserPoolClient", user_pool_client_id
+        )
+
+        user_pool_domain = cognito.UserPoolDomain.from_domain_name(
+            self, "ImportedUserPoolDomain", user_pool_domain_name
+        )
 
         # Setting
         region = self.region
@@ -77,8 +95,6 @@ class ComfyUIStack(Stack):
             hosted_zone_id=hosted_zone_id,
         )
 
-        # Auth
-
         auth_construct = AuthConstruct(
             self, "AuthConstruct",
             alb=alb_construct.alb,
@@ -89,7 +105,10 @@ class ComfyUIStack(Stack):
             self_sign_up_enabled=self_sign_up_enabled,
             mfa_required=mfa_required,
             allowed_sign_up_email_domains=allowed_sign_up_email_domains,
+            user_pool=user_pool,
+            user_pool_client=user_pool_client,
         )
+
 
         # ASG
 
@@ -103,6 +122,7 @@ class ComfyUIStack(Stack):
             timezone=timezone,
             schedule_scale_down=schedule_scale_down,
             schedule_scale_up=schedule_scale_up,
+            desired_capacity=1,
         )
 
         # ECS
@@ -115,8 +135,9 @@ class ComfyUIStack(Stack):
             is_sagemaker_studio=is_sagemaker_studio,
             suffix=suffix,
             region=region,
-            user_pool=auth_construct.user_pool,
-            user_pool_client=auth_construct.user_pool_client,
+            user_pool=user_pool,
+            user_pool_client=user_pool_client,
+            comfyui_image_tag=comfyui_image_tag,
         )
 
         # Admin Lambda
@@ -128,6 +149,7 @@ class ComfyUIStack(Stack):
             service=ecs_construct.service,
             auto_scaling_group=asg_construct.auto_scaling_group,
             user_pool_logout_url=auth_construct.user_pool_logout_url,
+            slack_webhook_url=slack_webhook_url,
         )
 
         # Associate resources to ALB
@@ -139,9 +161,9 @@ class ComfyUIStack(Stack):
             lambda_shutdown_target_group=admin_construct.lambda_shutdown_target_group,
             lambda_scaleup_target_group=admin_construct.lambda_scaleup_target_group,
             lambda_signout_target_group=admin_construct.lambda_signout_target_group,
-            user_pool=auth_construct.user_pool,
-            user_pool_client=auth_construct.user_pool_client,
-            user_pool_custom_domain=auth_construct.user_pool_custom_domain,
+            user_pool=user_pool,
+            user_pool_client=user_pool_client,
+            user_pool_custom_domain=user_pool_domain,
         )
 
         # Add env variables to lambda
@@ -154,6 +176,6 @@ class ComfyUIStack(Stack):
 
         CfnOutput(self, "Endpoint", value=auth_construct.application_dns_name)
         CfnOutput(self, "UserPoolId",
-                  value=auth_construct.user_pool.user_pool_id)
+                  value=user_pool.user_pool_id)
         CfnOutput(self, "CognitoDomainName",
-                  value=auth_construct.user_pool_custom_domain.domain_name)
+                  value=user_pool_domain_name)

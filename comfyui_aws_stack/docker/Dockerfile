@@ -1,5 +1,9 @@
 FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04
 
+# SLACK_WEBHOOK を外から渡す
+ARG SLACK_WEBHOOK_URL
+ENV SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=America/Los_Angeles
 
@@ -12,6 +16,12 @@ RUN apt-get update && apt-get install -y \
     ffmpeg libsm6 libxext6 cmake libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/* \
     && git lfs install
+
+# awscli のインストール（Slack通知前に使うため）
+RUN apt-get update && apt-get install -y unzip curl
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && ./aws/install
+    
 
 # Create and switch to a new user
 RUN useradd -m -u 1000 user
@@ -29,11 +39,9 @@ RUN pyenv install $PYTHON_VERSION && \
     pyenv rehash && \
     pip install --no-cache-dir --upgrade pip setuptools wheel 
 
-# Set the working directory
+# Clone ComfyUI directly
+RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI /home/user/opt/ComfyUI
 WORKDIR /home/user/opt/ComfyUI
-
-# Clone ComfyUI directly into /home/user/opt/ComfyUI
-RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI .
 
 # Create a Python virtual environment in a directory
 ENV TEMP_VENV_PATH=/home/user/opt/ComfyUI/.venv
@@ -46,8 +54,64 @@ RUN mkdir -p custom_nodes/ComfyUI-Manager && \
     git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager custom_nodes/ComfyUI-Manager && \
     . $TEMP_VENV_PATH/bin/activate && pip install --no-cache-dir --upgrade torch torchvision GitPython && \
     pip install -r custom_nodes/ComfyUI-Manager/requirements.txt
+    
+# カスタムノード追加
+RUN cd ./custom_nodes && \
+    git clone https://github.com/yhayano-ponotech/comfyui-save-image-local.git
+
+# Slack通知: basemodels.txt ダウンロード前
+ARG SLACK_WEBHOOK_URL
+RUN if [ ! -z "$SLACK_WEBHOOK_URL" ]; then \
+      curl -s -X POST -H 'Content-type: application/json' \
+      --data "{\"text\":\"📦 Dockerビルド中: モデルダウンロード準備中\"}" \
+      "$SLACK_WEBHOOK_URL"; \
+    fi
+
+# Book-SD-MasterGuide リポジトリから basemodels.txt を取得
+WORKDIR /home/user/opt/
+RUN git clone https://github.com/aicuai/Book-SD-MasterGuide.git
+
+WORKDIR /home/user/opt/ComfyUI
+   
+# 仮想環境の作成
+RUN python3 -m venv .venv && \
+    .venv/bin/pip install --upgrade pip && \
+    .venv/bin/pip install -r requirements.txt
+
+RUN mkdir -p models/checkpoints models/vae && \
+    cp /home/user/opt/Book-SD-MasterGuide/basemodels.txt ./basemodels.sh
+
 
 # Copy the configuration file
 COPY comfyui_config/extra_model_paths.yaml ./extra_model_paths.yaml
 
-CMD ["bash", "-c", "source /home/user/opt/ComfyUI/.venv/bin/activate && exec python /home/user/opt/ComfyUI/main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
+# CMD ["bash", "-c", "source /home/user/opt/ComfyUI/.venv/bin/activate && exec python /home/user/opt/ComfyUI/main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
+
+ENV VIRTUAL_ENV_PATH=/home/user/opt/ComfyUI/.venv
+CMD ["/bin/bash", "-c", "if [ -n \"$SLACK_WEBHOOK_URL\" ]; then curl -X POST -H 'Content-type: application/json' --data \"{\\\"text\\\":\\\"🚀 ComfyUI コンテナが起動しました（$HOSTNAME）\\\"}\" \"$SLACK_WEBHOOK_URL\"; fi && $VIRTUAL_ENV_PATH/bin/python $VIRTUAL_ENV_PATH/../main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
+
+# ダウンタイム最小化とダウンロード、通知など
+# COPY --chmod=755 entrypoint.sh /home/user/opt/ComfyUI/entrypoint.sh
+# ENTRYPOINT ["/home/user/opt/ComfyUI/entrypoint.sh"]
+
+RUN echo "=== Starting verbose setup ===" \
+  && echo "User: $(whoami)" \
+  && echo "Working Dir: $(pwd)" \
+  && echo "Listing contents:" \
+  && ls -alh \
+  && echo "=== Setup complete ==="
+
+# Slack通知（rootで実行）
+USER root
+RUN apt-get update && apt-get install -y curl && \
+  echo "Sending build notification to Slack..." && \
+  if [ -n "$SLACK_WEBHOOK_URL" ]; then \
+    curl -X POST -H 'Content-type: application/json' \
+    --data "{\"text\":\"✅ Docker image built successfully on $HOSTNAME\"}" \
+    "$SLACK_WEBHOOK_URL"; \
+  else \
+    echo "No SLACK_WEBHOOK_URL provided, skipping Slack notification."; \
+  fi
+
+# 最後に元のユーザーに戻す（必要なら）
+USER user
