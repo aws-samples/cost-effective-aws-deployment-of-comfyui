@@ -195,6 +195,7 @@ class AsgConstruct(Construct):
 
         # Notifications
         # CloudWatch Monitoring and Slack Notifications for ASG
+        asg_events_topic = None
         if slack_workspace_id and slack_channel_id:
             # Create SNS Topic for ASG Scaling Events
             asg_events_topic = sns.Topic(
@@ -278,17 +279,18 @@ class AsgConstruct(Construct):
             apply_to_children=True
         )
 
-        NagSuppressions.add_resource_suppressions(
-            [asg_events_topic],
-            suppressions=[
-                {"id": "AwsSolutions-SNS2",
-                 "reason": "SNS topic is implicitly created by LifeCycleActions and is not critical for sample purposes."
-                 },
-                {"id": "AwsSolutions-SNS3",
-                 "reason": "SNS topic is implicitly created by LifeCycleActions and is not critical for sample purposes."
-                 },
-            ],
-        )
+        if asg_events_topic:
+            NagSuppressions.add_resource_suppressions(
+                [asg_events_topic],
+                suppressions=[
+                    {"id": "AwsSolutions-SNS2",
+                     "reason": "SNS topic is implicitly created by LifeCycleActions and is not critical for sample purposes."
+                     },
+                    {"id": "AwsSolutions-SNS3",
+                     "reason": "SNS topic is implicitly created by LifeCycleActions and is not critical for sample purposes."
+                     },
+                ],
+            )
 
         # Output
 

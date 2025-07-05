@@ -233,6 +233,7 @@ class EcsConstruct(Construct):
         )
 
         # CloudWatch Monitoring and Slack Notifications
+        ecs_health_topic = None
         if slack_workspace_id and slack_channel_id:
             # Create SNS Topic for ECS Task Health Alerts
             ecs_health_topic = sns.Topic(
@@ -339,17 +340,18 @@ class EcsConstruct(Construct):
             apply_to_children=True
         )
 
-        NagSuppressions.add_resource_suppressions(
-            [ecs_health_topic],
-            suppressions=[
-                {"id": "AwsSolutions-SNS2",
-                 "reason": "SNS topic is implicitly created by LifeCycleActions and is not critical for sample purposes."
-                 },
-                {"id": "AwsSolutions-SNS3",
-                 "reason": "SNS topic is implicitly created by LifeCycleActions and is not critical for sample purposes."
-                 },
-            ],
-        )
+        if ecs_health_topic:
+            NagSuppressions.add_resource_suppressions(
+                [ecs_health_topic],
+                suppressions=[
+                    {"id": "AwsSolutions-SNS2",
+                     "reason": "SNS topic is implicitly created by LifeCycleActions and is not critical for sample purposes."
+                     },
+                    {"id": "AwsSolutions-SNS3",
+                     "reason": "SNS topic is implicitly created by LifeCycleActions and is not critical for sample purposes."
+                     },
+                ],
+            )
 
         # Output
 
