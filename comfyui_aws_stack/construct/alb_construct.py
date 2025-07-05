@@ -50,6 +50,9 @@ class AlbConstruct(Construct):
             is_sagemaker_studio: bool,
             allowed_ip_v4_address_ranges: List[str],
             allowed_ip_v6_address_ranges: List[str],
+            waf_rate_limit_enabled: bool,
+            waf_rate_limit_requests: int,
+            waf_rate_limit_interval: int,
             host_name: str,
             domain_name: str,
             hosted_zone_id: str,
@@ -170,9 +173,11 @@ class AlbConstruct(Construct):
                 scope, id="SelfSignedCert", certificate_arn=custom_resource.ref
             )
 
-        # WAF: ipv4 ipv6 restriction
-        if allowed_ip_v4_address_ranges or allowed_ip_v6_address_ranges:
+        # WAF: ipv4 ipv6 restriction and rate limiting
+        if allowed_ip_v4_address_ranges or allowed_ip_v6_address_ranges or waf_rate_limit_enabled:
             wafRules = []
+            rule_priority = 1
+
             if allowed_ip_v4_address_ranges:
                 ipv4 = wafv2.CfnIPSet(
                     scope,
@@ -184,7 +189,7 @@ class AlbConstruct(Construct):
                 wafRules += [
                     wafv2.CfnWebACL.RuleProperty(
                         name="IpV4SetRule",
-                        priority=1,
+                        priority=rule_priority,
                         visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
                             cloud_watch_metrics_enabled=True,
                             metric_name="IpV4SetRule",
@@ -198,6 +203,8 @@ class AlbConstruct(Construct):
                         ),
                     )
                 ]
+                rule_priority += 1
+
             if allowed_ip_v6_address_ranges:
                 ipv6 = wafv2.CfnIPSet(
                     scope,
@@ -209,7 +216,7 @@ class AlbConstruct(Construct):
                 wafRules += [
                     wafv2.CfnWebACL.RuleProperty(
                         name="IpV6SetRule",
-                        priority=2,
+                        priority=rule_priority,
                         visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
                             cloud_watch_metrics_enabled=True,
                             metric_name="IpV6SetRule",
@@ -223,10 +230,56 @@ class AlbConstruct(Construct):
                         ),
                     )
                 ]
+                rule_priority += 1
+
+            # Rate limiting rule for /api/prompt path only
+            if waf_rate_limit_enabled:
+                wafRules += [
+                    wafv2.CfnWebACL.RuleProperty(
+                        name="RateLimitRule",
+                        priority=rule_priority,
+                        visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                            cloud_watch_metrics_enabled=True,
+                            metric_name="RateLimitRule",
+                            sampled_requests_enabled=True,
+                        ),
+                        statement=wafv2.CfnWebACL.StatementProperty(
+                            rate_based_statement=wafv2.CfnWebACL.RateBasedStatementProperty(
+                                limit=waf_rate_limit_requests,
+                                aggregate_key_type="IP",
+                                evaluation_window_sec=waf_rate_limit_interval,
+                                scope_down_statement=wafv2.CfnWebACL.StatementProperty(
+                                    byte_match_statement=wafv2.CfnWebACL.ByteMatchStatementProperty(
+                                        field_to_match=wafv2.CfnWebACL.FieldToMatchProperty(
+                                            uri_path={}
+                                        ),
+                                        positional_constraint="STARTS_WITH",
+                                        search_string="/api/prompt",
+                                        text_transformations=[
+                                            wafv2.CfnWebACL.TextTransformationProperty(
+                                                priority=0,
+                                                type="NONE"
+                                            )
+                                        ]
+                                    )
+                                )
+                            )
+                        ),
+                        action=wafv2.CfnWebACL.RuleActionProperty(
+                            block=wafv2.CfnWebACL.BlockActionProperty(),
+                        ),
+                    )
+                ]
+
             waf = wafv2.CfnWebACL(
                 scope,
                 "WebACL",
-                default_action=wafv2.CfnWebACL.DefaultActionProperty(block={}),
+                default_action=wafv2.CfnWebACL.DefaultActionProperty(
+                    allow={} if not (
+                        allowed_ip_v4_address_ranges or allowed_ip_v6_address_ranges) else None,
+                    block={} if (
+                        allowed_ip_v4_address_ranges or allowed_ip_v6_address_ranges) else None
+                ),
                 scope="REGIONAL",
                 visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
                     cloud_watch_metrics_enabled=True,

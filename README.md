@@ -32,7 +32,7 @@ This sample repository provides a seamless and cost-effective solution to deploy
 - **[Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html)** - Holds the ComfyUI Docker image
 - **[CloudWatch Log Group](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html)** - Stores logs from the ECS task
 - **[Amazon Cognito](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html)** - User directory for having authentication in front of the ALB
-- **[AWS WAF](https://docs.aws.amazon.com/waf/latest/developerguide/waf-chapter.html)** - Block access by IP
+- **[AWS WAF](https://docs.aws.amazon.com/waf/latest/developerguide/waf-chapter.html)** - Block access by IP and rate limiting for DDoS protection
 - **[AWS Lambda](https://docs.aws.amazon.com/lambda/)** - To manage ComfyUI state
 
 ## Getting Started
@@ -147,11 +147,14 @@ With our comprehensive Deploy Options, you have the power to craft a tailored so
     - [Restrict the email address domains that can sign up](docs/DEPLOY_OPTION.md#restrict-the-email-address-domains-that-can-sign-up)
     - [Enable AWS WAF restrictions](docs/DEPLOY_OPTION.md#enable-aws-waf-restrictions)
         - [IP address restrictions](docs/DEPLOY_OPTION.md#ip-address-restrictions)
+        - [Rate limiting](docs/DEPLOY_OPTION.md#rate-limiting)
     - [SAML Authentication](docs/DEPLOY_OPTION.md#saml-authentication)
 - [Cost-related Settings](docs/DEPLOY_OPTION.md#cost-related-settings)
     - [Spot Instance](docs/DEPLOY_OPTION.md#spot-instance)
     - [Scale Down automatically / on schedule](docs/DEPLOY_OPTION.md#scale-down-automatically--on-schedule)
     - [Use NAT Insatnce instead of NAT Gateway](docs/DEPLOY_OPTION.md#use-nat-insatnce-instead-of-nat-gateway)
+- [Monitoring and Notifications](docs/DEPLOY_OPTION.md#monitoring-and-notifications)
+    - [Slack Integration](docs/DEPLOY_OPTION.md#slack-integration)
 - [Using a Custom Domain](docs/DEPLOY_OPTION.md#using-a-custom-domain)
 
 

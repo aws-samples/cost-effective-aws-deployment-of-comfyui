@@ -44,6 +44,10 @@ class ComfyUIStack(Stack):
                  # Network Restriction
                  allowed_ip_v4_address_ranges: List[str] = None,
                  allowed_ip_v6_address_ranges: List[str] = None,
+                 # WAF Rate Limiting
+                 waf_rate_limit_enabled: bool = False,
+                 waf_rate_limit_requests: int = 300,
+                 waf_rate_limit_interval: int = 300,
                  # Custom Domain
                  host_name: str = None,
                  domain_name: str = None,
@@ -79,6 +83,9 @@ class ComfyUIStack(Stack):
             is_sagemaker_studio=is_sagemaker_studio,
             allowed_ip_v4_address_ranges=allowed_ip_v4_address_ranges,
             allowed_ip_v6_address_ranges=allowed_ip_v6_address_ranges,
+            waf_rate_limit_enabled=waf_rate_limit_enabled,
+            waf_rate_limit_requests=waf_rate_limit_requests,
+            waf_rate_limit_interval=waf_rate_limit_interval,
             host_name=host_name,
             domain_name=domain_name,
             hosted_zone_id=hosted_zone_id,

@@ -85,6 +85,48 @@ comfy_ui_stack = ComfyUIStack(
 )
 ```
 
+#### Rate limiting
+
+To protect against DDoS attacks and excessive request rates, you can enable rate limiting using AWS WAF. Rate limiting blocks IP addresses that exceed the specified number of requests within a given time interval. The rate limiting is specifically applied to the `/api/prompt` endpoint, which is the primary API endpoint for ComfyUI workflow execution.
+
+**Edit [app.py](/app.py)**
+
+```python
+comfy_ui_stack = ComfyUIStack(
+    ...
+    # Override Parameters
+    waf_rate_limit_enabled=True,
+    waf_rate_limit_requests=300,  # Maximum requests per interval
+    waf_rate_limit_interval=300,   # Time interval in seconds (5 minutes)
+    ...
+)
+```
+
+Configuration options:
+
+- `waf_rate_limit_enabled`: Set to `True` to enable rate limiting (default is `False`)
+- `waf_rate_limit_requests`: Maximum number of requests allowed per IP address within the specified interval (default is `300`)
+- `waf_rate_limit_interval`: Time interval in seconds for rate limiting evaluation (default is `300` seconds = 5 minutes)
+
+**Example configurations:**
+
+```python
+# Strict rate limiting (100 requests per 5 minutes)
+waf_rate_limit_enabled=True,
+waf_rate_limit_requests=100,
+waf_rate_limit_interval=300,
+
+# Moderate rate limiting (600 requests per 10 minutes)
+waf_rate_limit_enabled=True,
+waf_rate_limit_requests=600,
+waf_rate_limit_interval=600,
+
+# Disable rate limiting
+waf_rate_limit_enabled=False,
+```
+
+When rate limiting is enabled, IP addresses that exceed the specified request threshold for the `/api/prompt` endpoint will be automatically blocked for the duration of the evaluation interval. This protects the ComfyUI API from abuse while allowing normal web browsing and other functionality to remain unaffected.
+
 ### SAML Authentication
 
 You can integrate with the SAML authentication functionality provided by IdPs such as Google Workspace or Microsoft Entra ID (formerly Azure Active Directory). The following are detailed integration procedures. Please make use of them.
@@ -186,6 +228,24 @@ comfy_ui_stack = ComfyUIStack(
     host_name="comfyui",
     domain_name="example.com",
     hosted_zone_id="XXXXXXXXXXXXXXXXXXXX",
+    ...
+)
+```
+
+## Monitoring and Notifications
+
+### Slack Integration
+
+You can enable Slack notifications to monitor the health and status of your ComfyUI deployment. When configured, the system will send alerts to your specified Slack channel for various events and issues.
+
+**Edit [app.py](/app.py)**
+
+```python
+comfy_ui_stack = ComfyUIStack(
+    ...
+    # Override Parameters
+    slack_workspace_id="XXXXXXXX",  # Your Slack Workspace ID
+    slack_channel_id="XXXXXXXXX",   # Your Slack Channel ID
     ...
 )
 ```

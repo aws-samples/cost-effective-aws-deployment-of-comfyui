@@ -18,6 +18,7 @@ from aws_cdk import (
     aws_kms as kms,
     Duration,
     RemovalPolicy,
+    Size,
 )
 from constructs import Construct
 from cdk_nag import NagSuppressions
@@ -117,6 +118,14 @@ class EcsConstruct(Construct):
             volumes=[volume]
         )
 
+        # Linux parameters for swap configuration
+        linux_parameters = ecs.LinuxParameters(
+            self,
+            "LinuxParameters",
+            max_swap=Size.mebibytes(10240),  # 10GB swap memory (10 * 1024 MiB)
+            swappiness=60    # Default swappiness value
+        )
+
         # Add container to the task definition
         container = task_definition.add_container(
             "ComfyUIContainer",
@@ -126,6 +135,8 @@ class EcsConstruct(Construct):
             ),
             gpu_count=1,
             memory_reservation_mib=15000,
+            memory_limit_mib=15000,  # Set total memory limit
+            linux_parameters=linux_parameters,
             logging=ecs.LogDriver.aws_logs(
                 stream_prefix="comfy-ui", log_group=log_group),
             health_check=ecs.HealthCheck(
@@ -227,12 +238,10 @@ class EcsConstruct(Construct):
             ecs_health_topic = sns.Topic(
                 self, "EcsHealthTopic",
                 display_name="ECS Task Health Alerts",
-                # master_key=kms.Alias.from_alias_name(
-                #     self, "Alias", "alias/aws/sns"),
                 enforce_ssl=True
             )
 
-            # Container Insightsを使用したECSタスク数監視
+            # Monitor ECS Task Count using Container Insights
             running_tasks_metric = cloudwatch.Metric(
                 namespace="ECS/ContainerInsights",
                 metric_name="RunningTaskCount",
@@ -243,7 +252,7 @@ class EcsConstruct(Construct):
                 period=Duration.minutes(1)
             )
 
-            # タスク数が0になった場合のアラーム
+            # Alarm when task count is 0
             no_running_tasks_alarm = cloudwatch.Alarm(
                 self, "NoRunningTasksAlarm",
                 metric=running_tasks_metric,
@@ -254,7 +263,7 @@ class EcsConstruct(Construct):
                 treat_missing_data=cloudwatch.TreatMissingData.BREACHING
             )
 
-            # SNSトピックにアラームを連携
+            # Attach SNS topic to the alarm
             no_running_tasks_alarm.add_alarm_action(
                 cloudwatch_actions.SnsAction(ecs_health_topic)
             )
