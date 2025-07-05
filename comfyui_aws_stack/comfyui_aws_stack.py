@@ -10,6 +10,10 @@ from comfyui_aws_stack.construct.asg_construct import AsgConstruct
 from comfyui_aws_stack.construct.ecs_construct import EcsConstruct
 from comfyui_aws_stack.construct.admin_construct import AdminConstruct
 from comfyui_aws_stack.construct.auth_construct import AuthConstruct
+from aws_cdk import (
+    aws_chatbot as chatbot,
+    aws_iam as iam
+)
 
 import os
 import hashlib
@@ -40,10 +44,17 @@ class ComfyUIStack(Stack):
                  # Network Restriction
                  allowed_ip_v4_address_ranges: List[str] = None,
                  allowed_ip_v6_address_ranges: List[str] = None,
+                 # WAF Rate Limiting
+                 waf_rate_limit_enabled: bool = False,
+                 waf_rate_limit_requests: int = 300,
+                 waf_rate_limit_interval: int = 300,
                  # Custom Domain
                  host_name: str = None,
                  domain_name: str = None,
                  hosted_zone_id: str = None,
+                 # Slack
+                 slack_workspace_id: str = None,
+                 slack_channel_id: str = None,
                  **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -72,6 +83,9 @@ class ComfyUIStack(Stack):
             is_sagemaker_studio=is_sagemaker_studio,
             allowed_ip_v4_address_ranges=allowed_ip_v4_address_ranges,
             allowed_ip_v6_address_ranges=allowed_ip_v6_address_ranges,
+            waf_rate_limit_enabled=waf_rate_limit_enabled,
+            waf_rate_limit_requests=waf_rate_limit_requests,
+            waf_rate_limit_interval=waf_rate_limit_interval,
             host_name=host_name,
             domain_name=domain_name,
             hosted_zone_id=hosted_zone_id,
@@ -103,6 +117,8 @@ class ComfyUIStack(Stack):
             timezone=timezone,
             schedule_scale_down=schedule_scale_down,
             schedule_scale_up=schedule_scale_up,
+            slack_workspace_id=slack_workspace_id,
+            slack_channel_id=slack_channel_id,
         )
 
         # ECS
@@ -117,7 +133,31 @@ class ComfyUIStack(Stack):
             region=region,
             user_pool=auth_construct.user_pool,
             user_pool_client=auth_construct.user_pool_client,
+            slack_workspace_id=slack_workspace_id,
+            slack_channel_id=slack_channel_id,
         )
+
+        # Slack
+
+        if slack_workspace_id and slack_channel_id:
+            slack_channel = chatbot.SlackChannelConfiguration(
+                self, "SlackChannel",
+                slack_channel_configuration_name="TestChannel",
+                slack_workspace_id=slack_workspace_id,
+                slack_channel_id=slack_channel_id,
+                notification_topics=[
+                    asg_construct.asg_events_topic, ecs_construct.ecs_health_topic]
+            )
+            slack_channel.role.add_managed_policy(
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "CloudWatchReadOnlyAccess"
+                )
+            )
+            slack_channel.role.add_managed_policy(
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "AmazonQFullAccess"
+                )
+            )
 
         # Admin Lambda
 

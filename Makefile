@@ -23,6 +23,12 @@ cdk-deploy: setup
 	@echo "Running cdk deploy..."
 	npx cdk deploy
 
+cdk-deploy-force: setup
+	@echo "Running cdk bootstrap..."
+	npx cdk bootstrap
+	@echo "Running cdk deploy..."
+	npx cdk deploy --require-approval never
+
 test: install-python
 	pytest -vv
 

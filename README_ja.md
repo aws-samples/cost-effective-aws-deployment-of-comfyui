@@ -148,11 +148,14 @@ ComfyUI の機能を最大限に活用し、シームレスな体験を確保す
     - [サインアップできるメールアドレスのドメインを制限する](docs/DEPLOY_OPTION.md#restrict-the-email-address-domains-that-can-sign-up)
     - [AWS WAF の制限を有効にする](docs/DEPLOY_OPTION.md#enable-aws-waf-restrictions)
         - [IP アドレスの制限](docs/DEPLOY_OPTION.md#ip-address-restrictions)
+        - [Rate limiting](docs/DEPLOY_OPTION.md#rate-limiting)
     - [SAML 認証](docs/DEPLOY_OPTION.md#saml-authentication)
 - [コスト関連の設定](docs/DEPLOY_OPTION.md#cost-related-settings)
     - [スポットインスタンス](docs/DEPLOY_OPTION.md#spot-instance)
     - [自動/スケジュールでスケールダウン](docs/DEPLOY_OPTION.md#scale-down-automatically--on-schedule)
     - [NAT ゲートウェイの代わりに NAT インスタンスを使用する](docs/DEPLOY_OPTION.md#use-nat-insatnce-instead-of-nat-gateway)
+- [監視と通知](docs/DEPLOY_OPTION.md#monitoring-and-notifications)
+    - [Slack Integration](docs/DEPLOY_OPTION.md#slack-integration)
 - [カスタムドメインの使用](docs/DEPLOY_OPTION.md#using-a-custom-domain)
 
 ### デプロイメントを削除してリソースをクリーンアップする

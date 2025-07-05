@@ -132,11 +132,14 @@ wget -c https://huggingface.co/ai-forever/Real-ESRGAN/blob/main/RealESRGAN_x2.pt
     - [限制可注册的电子邮件地址域](docs/DEPLOY_OPTION.md#restrict-the-email-address-domains-that-can-sign-up)
     - [启用 AWS WAF 限制](docs/DEPLOY_OPTION.md#enable-aws-waf-restrictions)
         - [IP 地址限制](docs/DEPLOY_OPTION.md#ip-address-restrictions)
+        - [Rate limiting](docs/DEPLOY_OPTION.md#rate-limiting)
     - [SAML 身份验证](docs/DEPLOY_OPTION.md#saml-authentication)
 - [成本相关设置](docs/DEPLOY_OPTION.md#cost-related-settings)
     - [Spot 实例](docs/DEPLOY_OPTION.md#spot-instance)
     - [自动/定期缩容](docs/DEPLOY_OPTION.md#scale-down-automatically--on-schedule)
     - [使用 NAT 实例而不是 NAT 网关](docs/DEPLOY_OPTION.md#use-nat-insatnce-instead-of-nat-gateway)
+- [Monitoring and Notifications](docs/DEPLOY_OPTION.md#monitoring-and-notifications)
+    - [Slack Integration](docs/DEPLOY_OPTION.md#slack-integration)
 - [使用自定义域名](docs/DEPLOY_OPTION.md#using-a-custom-domain)
 
 
