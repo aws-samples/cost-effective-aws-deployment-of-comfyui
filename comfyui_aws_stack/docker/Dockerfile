@@ -40,7 +40,7 @@ RUN pyenv install $PYTHON_VERSION && \
     pip install --no-cache-dir --upgrade pip setuptools wheel 
 
 # Clone ComfyUI directly
-RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI /home/user/opt/ComfyUI
+RUN git clone https://github.com/comfyanonymous/ComfyUI /home/user/opt/ComfyUI
 WORKDIR /home/user/opt/ComfyUI
 
 # Create a Python virtual environment in a directory
@@ -51,7 +51,7 @@ RUN . $TEMP_VENV_PATH/bin/activate && pip install xformers!=0.0.18 --no-cache-di
 
 # Clone ComfyUI-Manager and install its requirements
 RUN mkdir -p custom_nodes/ComfyUI-Manager && \
-    git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager custom_nodes/ComfyUI-Manager && \
+    git clone https://github.com/aicuai/ComfyUI-Manager-AICU custom_nodes/ComfyUI-Manager && \
     . $TEMP_VENV_PATH/bin/activate && pip install --no-cache-dir --upgrade torch torchvision GitPython && \
     pip install -r custom_nodes/ComfyUI-Manager/requirements.txt
     
@@ -79,7 +79,12 @@ RUN python3 -m venv .venv && \
     .venv/bin/pip install -r requirements.txt
 
 RUN mkdir -p models/checkpoints models/vae && \
-    cp /home/user/opt/Book-SD-MasterGuide/basemodels.txt ./basemodels.sh
+    wget -c https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.ckpt -P ./models/checkpoints/ && \
+    wget -c https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors -P ./models/checkpoints/ && \
+    wget -c https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors -P ./models/vae/ && \
+    wget -c https://huggingface.co/SG161222/RealVisXL_V5.0/resolve/main/RealVisXL_V5.0_fp16.safetensors -P ./models/checkpoints/ && \
+    wget -c https://huggingface.co/cagliostrolab/animagine-xl-4.0/resolve/main/animagine-xl-4.0.safetensors -P ./models/checkpoints/ && \
+    wget -c https://huggingface.co/cagliostrolab/animagine-xl-4.0/resolve/main/animagine-xl-4.0-opt.safetensors -P ./models/checkpoints/
 
 
 # Copy the configuration file
@@ -87,12 +92,9 @@ COPY comfyui_config/extra_model_paths.yaml ./extra_model_paths.yaml
 
 # CMD ["bash", "-c", "source /home/user/opt/ComfyUI/.venv/bin/activate && exec python /home/user/opt/ComfyUI/main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
 
-ENV VIRTUAL_ENV_PATH=/home/user/opt/ComfyUI/.venv
-CMD ["/bin/bash", "-c", "if [ -n \"$SLACK_WEBHOOK_URL\" ]; then curl -X POST -H 'Content-type: application/json' --data \"{\\\"text\\\":\\\"🚀 ComfyUI コンテナが起動しました（$HOSTNAME）\\\"}\" \"$SLACK_WEBHOOK_URL\"; fi && $VIRTUAL_ENV_PATH/bin/python $VIRTUAL_ENV_PATH/../main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
-
 # ダウンタイム最小化とダウンロード、通知など
-# COPY --chmod=755 entrypoint.sh /home/user/opt/ComfyUI/entrypoint.sh
-# ENTRYPOINT ["/home/user/opt/ComfyUI/entrypoint.sh"]
+COPY --chmod=755 entrypoint.sh /home/user/opt/ComfyUI/entrypoint.sh
+ENTRYPOINT ["/home/user/opt/ComfyUI/entrypoint.sh"]
 
 RUN echo "=== Starting verbose setup ===" \
   && echo "User: $(whoami)" \

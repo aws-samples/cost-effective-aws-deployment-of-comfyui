@@ -35,7 +35,7 @@ fi
 python "$COMFYUI_PATH/main.py" \
   --listen 0.0.0.0 \
   --port $PORT \
-  --output-directory "$COMFYUI_PATH/output/" &
+  --multi-user &
 MAIN_PID=$!
 
 # 数秒待って起動確認

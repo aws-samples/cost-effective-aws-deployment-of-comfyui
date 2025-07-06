@@ -134,6 +134,7 @@ class EcsConstruct(Construct):
                 "AWS_REGION": region,
                 "COGNITO_USER_POOL_ID": user_pool.user_pool_id,
                 "COGNITO_CLIENT_ID": user_pool_client.user_pool_client_id,
+                "SLACK_WEBHOOK_URL": self.node.try_get_context("slack_webhook_url") or ""
                 # Add other env variables here
             }
         )
