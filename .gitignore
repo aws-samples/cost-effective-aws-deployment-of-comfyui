@@ -55,3 +55,4 @@ node_modules
 bandit-env/
 bandit_output.txt
 cfn_nagged.yaml
+scripts/cognito_users.json
