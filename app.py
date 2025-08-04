@@ -16,8 +16,8 @@ comfy_ui_stack = ComfyUIStack(
     app, "ComfyUIStack",
     description="ComfyUI on AWS (uksb-ggn3251wsp)",
     env=Environment(
-        account=os.environ["CDK_DEFAULT_ACCOUNT"],
-        region=os.environ["CDK_DEFAULT_REGION"]
+        account=os.environ.get("CDK_DEFAULT_ACCOUNT"),
+        region="us-east-2"
     ),
     tags={
         "Repository": "aws-samples/cost-effective-aws-deployment-of-comfyui"

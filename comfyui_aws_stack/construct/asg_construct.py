@@ -84,10 +84,10 @@ class AsgConstruct(Construct):
         launchTemplate = ec2.LaunchTemplate(
             scope,
             "Host",
+            instance_type=ec2.InstanceType("g5.2xlarge"),
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(
                 hardware_type=ecs.AmiHardwareType.GPU
             ),
-            key_pair=ec2.KeyPair.from_key_pair_name(scope, "KeyPair", "comfyui-ssh-key"),
             role=ec2_role,
             security_group=asg_security_group,
             user_data=user_data_script,
@@ -103,26 +103,7 @@ class AsgConstruct(Construct):
             scope,
             "ASG",
             vpc=vpc,
-            # Use Mixed Instance Policy to increase availability in case capacity is not available.
-            mixed_instances_policy=autoscaling.MixedInstancesPolicy(
-                instances_distribution=autoscaling.InstancesDistribution(
-                    on_demand_base_capacity=1, #スポット確保が失敗した場合はオンデマンドで1台確保
-                    on_demand_percentage_above_base_capacity=100 if not use_spot else 50, #fallback to 50% on-demand if spot is not available
-                    on_demand_allocation_strategy=autoscaling.OnDemandAllocationStrategy.LOWEST_PRICE,
-                    spot_allocation_strategy=autoscaling.SpotAllocationStrategy.CAPACITY_OPTIMIZED, #確保できないのでLOWEST_PRICE→CAPACITY_OPTIMIZEDに変更
-                    # spot_instance_pools=None, #確保できないのでまずはオンデマンドで起動
-                    spot_max_price=spot_price,
-                ),
-                launch_template=launchTemplate,
-                launch_template_overrides=[
-                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g6.2xlarge")),
-                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g5.2xlarge")),
-                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g4dn.2xlarge")),
-                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g6.xlarge")),
-                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g5.xlarge")),
-                    autoscaling.LaunchTemplateOverrides(instance_type=ec2.InstanceType("g4dn.xlarge")),
-                ],
-            ),
+            launch_template=launchTemplate,
             min_capacity=1,
             max_capacity=1,
             new_instances_protected_from_scale_in=False,

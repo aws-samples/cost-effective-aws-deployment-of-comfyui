@@ -1,4 +1,5 @@
 from aws_cdk import (
+    Stack,
     aws_iam as iam,
     aws_elasticloadbalancingv2 as elbv2,
     Duration,
@@ -49,8 +50,9 @@ class AuthConstruct(Construct):
         user_pool_domain_ctx = self.node.try_get_context("user_pool_domain_name")
 
         if user_pool_id_ctx and user_pool_client_id_ctx and user_pool_domain_ctx:
-            self.user_pool = cognito.UserPool.from_user_pool_id(
-                self, "ImportedUserPool", user_pool_id_ctx)
+            user_pool_arn = f"arn:aws:cognito-idp:{Stack.of(self).region}:{Stack.of(self).account}:userpool/{user_pool_id_ctx}"
+            self.user_pool = cognito.UserPool.from_user_pool_arn(
+                self, "ImportedUserPool", user_pool_arn)
             self.user_pool_client = cognito.UserPoolClient.from_user_pool_client_id(
                 self, "ImportedUserPoolClient", user_pool_client_id_ctx)
             self.user_pool_custom_domain = None
