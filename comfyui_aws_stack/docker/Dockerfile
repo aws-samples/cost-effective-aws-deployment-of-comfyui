@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04
+FROM nvidia/cuda:12.9.0-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=America/Los_Angeles
@@ -23,7 +23,7 @@ RUN mkdir -p /home/user/opt/ComfyUI && chown -R user /home/user/opt/ComfyUI
 # Pyenv and Python setup
 RUN curl https://pyenv.run | bash
 ENV PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
-ENV PYTHON_VERSION=3.10.12
+ENV PYTHON_VERSION=3.12.0
 RUN pyenv install $PYTHON_VERSION && \
     pyenv global $PYTHON_VERSION && \
     pyenv rehash && \
@@ -39,12 +39,15 @@ RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI .
 ENV TEMP_VENV_PATH=/home/user/opt/ComfyUI/.venv
 RUN python -m venv $TEMP_VENV_PATH
 
-RUN . $TEMP_VENV_PATH/bin/activate && pip install xformers!=0.0.18 --no-cache-dir -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu121
+RUN . $TEMP_VENV_PATH/bin/activate && pip install --no-cache-dir -r requirements.txt && \
+    pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu129 && \
+    pip install ninja && \
+    pip install -v --no-build-isolation -U git+https://github.com/facebookresearch/xformers.git@main#egg=xformers
 
 # Clone ComfyUI-Manager and install its requirements
 RUN mkdir -p custom_nodes/ComfyUI-Manager && \
     git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager custom_nodes/ComfyUI-Manager && \
-    . $TEMP_VENV_PATH/bin/activate && pip install --no-cache-dir --upgrade torch torchvision GitPython && \
+    . $TEMP_VENV_PATH/bin/activate && pip install --no-cache-dir --upgrade GitPython && \
     pip install -r custom_nodes/ComfyUI-Manager/requirements.txt
 
 # Copy the configuration file
