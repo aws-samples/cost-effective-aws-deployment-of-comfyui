@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04
+FROM FROM public.ecr.aws/nvidia/cuda:12.3.1-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=America/Los_Angeles
