@@ -35,22 +35,20 @@ WORKDIR /home/user/opt/ComfyUI
 # Clone ComfyUI directly into /home/user/opt/ComfyUI
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI .
 
-# Create a Python virtual environment in a directory
-ENV TEMP_VENV_PATH=/home/user/opt/ComfyUI/.venv
-RUN python -m venv $TEMP_VENV_PATH
-
-RUN . $TEMP_VENV_PATH/bin/activate && pip install --no-cache-dir -r requirements.txt && \
+# Install Python packages globally (no virtual environment needed since EBS mount overwrites directory)
+RUN pip install --no-cache-dir -r requirements.txt && \
     pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu129 && \
     pip install ninja && \
+    pip install PyYAML && \
     pip install -v --no-build-isolation -U git+https://github.com/facebookresearch/xformers.git@main#egg=xformers
 
 # Clone ComfyUI-Manager and install its requirements
 RUN mkdir -p custom_nodes/ComfyUI-Manager && \
     git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager custom_nodes/ComfyUI-Manager && \
-    . $TEMP_VENV_PATH/bin/activate && pip install --no-cache-dir --upgrade GitPython && \
+    pip install --no-cache-dir --upgrade GitPython && \
     pip install -r custom_nodes/ComfyUI-Manager/requirements.txt
 
 # Copy the configuration file
 COPY comfyui_config/extra_model_paths.yaml ./extra_model_paths.yaml
 
-CMD ["bash", "-c", "source /home/user/opt/ComfyUI/.venv/bin/activate && exec python /home/user/opt/ComfyUI/main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
+CMD ["python", "/home/user/opt/ComfyUI/main.py", "--listen", "0.0.0.0", "--port", "8181", "--output-directory", "/home/user/opt/ComfyUI/output/"]
