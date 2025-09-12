@@ -70,7 +70,8 @@ class EcsConstruct(Construct):
         docker_image_asset = ecr_assets.DockerImageAsset(
             scope,
             "ComfyUIImage",
-            directory="comfyui_aws_stack/docker",
+            directory=".",
+            file="comfyui_aws_stack/docker/Dockerfile",
             platform=ecr_assets.Platform.LINUX_AMD64,
             network_mode=ecr_assets.NetworkMode.custom(
                 "sagemaker") if is_sagemaker_studio else None
@@ -118,6 +119,7 @@ class EcsConstruct(Construct):
 #            ),
 # After
             image=ecs.ContainerImage.from_docker_image_asset(docker_image_asset),
+            entry_point=["/home/user/opt/ComfyUI/entrypoint.sh"],
             gpu_count=1,
             memory_reservation_mib=15000,
             logging=ecs.LogDriver.aws_logs(

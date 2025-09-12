@@ -40,8 +40,8 @@ RUN pyenv install $PYTHON_VERSION && \
     pip install --no-cache-dir --upgrade pip setuptools wheel 
 
 # Clone ComfyUI directly
-RUN git clone https://github.com/comfyanonymous/ComfyUI /home/user/opt/ComfyUI
 WORKDIR /home/user/opt/ComfyUI
+RUN git clone https://github.com/comfyanonymous/ComfyUI .
 
 # Create a Python virtual environment in a directory
 ENV TEMP_VENV_PATH=/home/user/opt/ComfyUI/.venv
@@ -88,12 +88,12 @@ RUN mkdir -p models/checkpoints models/vae && \
 
 
 # Copy the configuration file
-COPY comfyui_config/extra_model_paths.yaml ./extra_model_paths.yaml
+COPY comfyui_aws_stack/docker/comfyui_config/extra_model_paths.yaml ./extra_model_paths.yaml
 
 # CMD ["bash", "-c", "source /home/user/opt/ComfyUI/.venv/bin/activate && exec python /home/user/opt/ComfyUI/main.py --listen 0.0.0.0 --port 8181 --output-directory /home/user/opt/ComfyUI/output/"]
 
 # ダウンタイム最小化とダウンロード、通知など
-COPY --chmod=755 entrypoint.sh /home/user/opt/ComfyUI/entrypoint.sh
+COPY --chmod=755 scripts/entrypoint.sh /home/user/opt/ComfyUI/entrypoint.sh
 ENTRYPOINT ["/home/user/opt/ComfyUI/entrypoint.sh"]
 
 RUN echo "=== Starting verbose setup ===" \

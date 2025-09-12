@@ -84,7 +84,7 @@ class AsgConstruct(Construct):
         launchTemplate = ec2.LaunchTemplate(
             scope,
             "Host",
-            instance_type=ec2.InstanceType("g5.2xlarge"),
+            instance_type=ec2.InstanceType("g6.xlarge"),
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(
                 hardware_type=ecs.AmiHardwareType.GPU
             ),
