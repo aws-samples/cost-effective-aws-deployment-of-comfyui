@@ -57,3 +57,4 @@ bandit_output.txt
 cfn_nagged.yaml
 scripts/cognito_users.json
 .gemini/
+AGENTS.md
