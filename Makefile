@@ -54,3 +54,12 @@ docker-build-push: docker-build docker-push
 # Get current ECR image URI
 docker-get-uri:
 	@bash scripts/get-image-uri.sh
+
+# Update ECS Service with new image
+ecs-update:
+	@echo "Updating ECS Service with new image..."
+	@bash scripts/update-ecs-service.sh
+
+# Full deployment: build, push, and update ECS
+docker-deploy: docker-build-push ecs-update
+	@echo "Full deployment completed successfully!"
