@@ -38,3 +38,19 @@ test-update: install-python
 clean:
 	@echo "Removing virtual environment and node modules..."
 	rm -rf venv node_modules
+
+# Docker Image Management
+docker-build:
+	@echo "Building Docker image locally..."
+	@bash scripts/build-image.sh
+
+docker-push:
+	@echo "Pushing Docker image to ECR..."
+	@bash scripts/push-image.sh
+
+docker-build-push: docker-build docker-push
+	@echo "Docker image built and pushed successfully!"
+
+# Get current ECR image URI
+docker-get-uri:
+	@bash scripts/get-image-uri.sh
