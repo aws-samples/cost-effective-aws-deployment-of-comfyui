@@ -17,13 +17,18 @@ node_modules: package.json package-lock.json
 	@echo "Installing Node.js requirements..."
 	npm install
 
-cdk-deploy: setup
+docker-build:
+	@echo "Building Docker image..."
+	docker build -t comfyui-aws:latest comfyui_aws_stack/docker/
+	@echo "Docker image built successfully!"
+
+cdk-deploy: setup docker-build
 	@echo "Running cdk bootstrap..."
 	npx cdk bootstrap
 	@echo "Running cdk deploy..."
 	npx cdk deploy
 
-cdk-deploy-force: setup
+cdk-deploy-force: setup docker-build
 	@echo "Running cdk bootstrap..."
 	npx cdk bootstrap
 	@echo "Running cdk deploy..."
