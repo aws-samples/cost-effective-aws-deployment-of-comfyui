@@ -197,6 +197,7 @@ class EcsConstruct(Construct):
             "ComfyUIService",
             cluster=cluster,
             task_definition=task_definition,
+            desired_count=1,
             capacity_provider_strategies=[
                 ecs.CapacityProviderStrategy(
                     capacity_provider=capacity_provider.capacity_provider_name, weight=1
