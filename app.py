@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import boto3
 import aws_cdk as cdk
 from aws_cdk import Environment
 from aws_cdk import Aspects
@@ -7,12 +8,31 @@ from comfyui_aws_stack.comfyui_aws_stack import ComfyUIStack
 from cdk_nag import AwsSolutionsChecks, NagSuppressions
 
 app = cdk.App()
+
+# Get AWS account information from credentials
+# This uses AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_SESSION_TOKEN
+# from environment variables
+try:
+    sts = boto3.client('sts')
+    caller_identity = sts.get_caller_identity()
+    account = caller_identity['Account']
+    # Get region from environment variables or boto3 session
+    region = os.environ.get('AWS_DEFAULT_REGION') or boto3.Session().region_name or 'us-east-1'
+    print(f"AWS Account: {account}")
+    print(f"AWS Region: {region}")
+    print(f"AWS ARN: {caller_identity.get('Arn', 'N/A')}")
+except Exception as e:
+    print(f"Error: Could not retrieve AWS account information: {e}")
+    print("Please ensure AWS credentials are properly configured.")
+    import sys
+    sys.exit(1)
+
 comfy_ui_stack = ComfyUIStack(
     app, "ComfyUIStack",
     description="ComfyUI on AWS (uksb-ggn3251wsp)",
     env=Environment(
-        account=os.environ["CDK_DEFAULT_ACCOUNT"],
-        region=os.environ["CDK_DEFAULT_REGION"]
+        account=account,
+        region=region
     ),
     tags={
         "Repository": "aws-samples/cost-effective-aws-deployment-of-comfyui"

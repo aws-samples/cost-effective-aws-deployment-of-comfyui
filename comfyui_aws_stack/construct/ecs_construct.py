@@ -2,6 +2,7 @@ from aws_cdk import (
     aws_ecs as ecs,
     aws_ec2 as ec2,
     aws_ecr_assets as ecr_assets,
+    aws_ecr as ecr,
     aws_logs as logs,
     aws_iam as iam,
     aws_cognito as cognito,
@@ -22,6 +23,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 from cdk_nag import NagSuppressions
+import os
 
 
 class EcsConstruct(Construct):
@@ -78,15 +80,43 @@ class EcsConstruct(Construct):
             ],
         )
 
-        # ECR Repository
-        docker_image_asset = ecr_assets.DockerImageAsset(
-            scope,
-            "ComfyUIImage",
-            directory="comfyui_aws_stack/docker",
-            platform=ecr_assets.Platform.LINUX_AMD64,
-            network_mode=ecr_assets.NetworkMode.custom(
-                "sagemaker") if is_sagemaker_studio else None
-        )
+        # Check if pre-built image URI is provided
+        pre_built_image_uri = os.environ.get('COMFYUI_IMAGE_URI')
+        
+        if pre_built_image_uri:
+            # Use pre-built image from ECR
+            print(f"Using pre-built Docker image: {pre_built_image_uri}")
+            # Parse the image URI to extract repository name and tag
+            # Format: account.dkr.ecr.region.amazonaws.com/repo-name:tag
+            uri_parts = pre_built_image_uri.split('/')
+            repo_name = uri_parts[-1].split(':')[0]
+            image_tag = uri_parts[-1].split(':')[1] if ':' in uri_parts[-1] else 'latest'
+            
+            # Reference the existing ECR repository
+            ecr_repository = ecr.Repository.from_repository_name(
+                scope,
+                "ComfyUIECRRepo",
+                repo_name
+            )
+            container_image = ecs.ContainerImage.from_ecr_repository(
+                ecr_repository,
+                image_tag
+            )
+        else:
+            # Build Docker image from source (original behavior)
+            print("Building Docker image from source...")
+            docker_image_asset = ecr_assets.DockerImageAsset(
+                scope,
+                "ComfyUIImage",
+                directory="comfyui_aws_stack/docker",
+                platform=ecr_assets.Platform.LINUX_AMD64,
+                network_mode=ecr_assets.NetworkMode.custom(
+                    "sagemaker") if is_sagemaker_studio else None
+            )
+            container_image = ecs.ContainerImage.from_ecr_repository(
+                docker_image_asset.repository,
+                docker_image_asset.image_tag
+            )
 
         # CloudWatch Logs Group
         log_group = logs.LogGroup(
@@ -129,10 +159,7 @@ class EcsConstruct(Construct):
         # Add container to the task definition
         container = task_definition.add_container(
             "ComfyUIContainer",
-            image=ecs.ContainerImage.from_ecr_repository(
-                docker_image_asset.repository,
-                docker_image_asset.image_tag
-            ),
+            image=container_image,
             gpu_count=1,
             memory_reservation_mib=15000,
             memory_limit_mib=15000,  # Set total memory limit
