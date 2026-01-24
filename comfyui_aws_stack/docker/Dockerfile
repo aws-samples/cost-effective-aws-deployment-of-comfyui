@@ -1,4 +1,4 @@
-FROM FROM public.ecr.aws/nvidia/cuda:12.9.0-runtime-ubuntu22.04
+FROM nvidia/cuda:12.9.0-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=America/Los_Angeles
@@ -26,27 +26,20 @@ ENV PATH=$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH
 ENV PYTHON_VERSION=3.12.0
 RUN pyenv install $PYTHON_VERSION && \
     pyenv global $PYTHON_VERSION && \
-    pyenv rehash && \
-    pip install --no-cache-dir --upgrade pip setuptools wheel 
+    pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu126
 
 # Set the working directory
 WORKDIR /home/user/opt/ComfyUI
 
-# Clone ComfyUI directly into /home/user/opt/ComfyUI
-RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI .
+# Clone ComfyUI and ComfyUI-Manager
+RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI . && \
+    mkdir -p custom_nodes/ComfyUI-Manager && \
+    git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager custom_nodes/ComfyUI-Manager
 
-# Install Python packages globally (no virtual environment needed since EBS mount overwrites directory)
+# Install requirements from cloned repositories
 RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu129 && \
-    pip install ninja && \
-    pip install PyYAML && \
-    pip install -v --no-build-isolation -U git+https://github.com/facebookresearch/xformers.git@main#egg=xformers
-
-# Clone ComfyUI-Manager and install its requirements
-RUN mkdir -p custom_nodes/ComfyUI-Manager && \
-    git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager custom_nodes/ComfyUI-Manager && \
-    pip install --no-cache-dir --upgrade GitPython && \
-    pip install -r custom_nodes/ComfyUI-Manager/requirements.txt
+    pip install --no-cache-dir -r custom_nodes/ComfyUI-Manager/requirements.txt
 
 # Copy the configuration file
 COPY comfyui_config/extra_model_paths.yaml ./extra_model_paths.yaml
