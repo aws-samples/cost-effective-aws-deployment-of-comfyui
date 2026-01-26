@@ -30,6 +30,7 @@ class AsgConstruct(Construct):
             vpc: ec2.Vpc,
             use_spot: bool,
             spot_price: str,
+            instance_types: list,
             auto_scale_down: bool,
             schedule_auto_scaling: bool,
             timezone: str,
@@ -88,6 +89,14 @@ class AsgConstruct(Construct):
                 )
             ],
         )
+        
+        # Create launch template overrides from instance types list
+        launch_template_overrides = [
+            autoscaling.LaunchTemplateOverrides(
+                instance_type=ec2.InstanceType(instance_type)
+            ) for instance_type in instance_types
+        ]
+        
         auto_scaling_group = autoscaling.AutoScalingGroup(
             scope,
             "ASG",
@@ -103,20 +112,7 @@ class AsgConstruct(Construct):
                     spot_max_price=spot_price,
                 ),
                 launch_template=launchTemplate,
-                launch_template_overrides=[
-                    autoscaling.LaunchTemplateOverrides(
-                        instance_type=ec2.InstanceType("g4dn.xlarge")),
-                    autoscaling.LaunchTemplateOverrides(
-                        instance_type=ec2.InstanceType("g5.xlarge")),
-                    autoscaling.LaunchTemplateOverrides(
-                        instance_type=ec2.InstanceType("g6.xlarge")),
-                    autoscaling.LaunchTemplateOverrides(
-                        instance_type=ec2.InstanceType("g4dn.2xlarge")),
-                    autoscaling.LaunchTemplateOverrides(
-                        instance_type=ec2.InstanceType("g5.2xlarge")),
-                    autoscaling.LaunchTemplateOverrides(
-                        instance_type=ec2.InstanceType("g6.2xlarge")),
-                ],
+                launch_template_overrides=launch_template_overrides,
             ),
             min_capacity=0,
             max_capacity=1,
