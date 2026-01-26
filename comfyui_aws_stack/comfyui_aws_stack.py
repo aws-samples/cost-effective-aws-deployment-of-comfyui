@@ -30,6 +30,8 @@ class ComfyUIStack(Stack):
                  # Spot
                  use_spot: bool = True,
                  spot_price: str = "0.752",
+                 # Instance Types
+                 instance_types: List[str] = ["g4dn.xlarge", "g5.xlarge", "g6.xlarge"],
                  # Auto Scaling
                  auto_scale_down: bool = True,
                  schedule_auto_scaling: bool = False,
@@ -112,6 +114,7 @@ class ComfyUIStack(Stack):
             vpc=vpc_construct.vpc,
             use_spot=use_spot,
             spot_price=spot_price,
+            instance_types=instance_types,
             auto_scale_down=auto_scale_down,
             schedule_auto_scaling=schedule_auto_scaling,
             timezone=timezone,
@@ -133,6 +136,7 @@ class ComfyUIStack(Stack):
             region=region,
             user_pool=auth_construct.user_pool,
             user_pool_client=auth_construct.user_pool_client,
+            instance_types=instance_types,
             slack_workspace_id=slack_workspace_id,
             slack_channel_id=slack_channel_id,
         )

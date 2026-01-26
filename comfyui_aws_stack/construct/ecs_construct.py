@@ -42,6 +42,7 @@ class EcsConstruct(Construct):
             region: str,
             user_pool: cognito.UserPool,
             user_pool_client: cognito.UserPoolClient,
+            instance_types: list,
             slack_workspace_id: str = None,
             slack_channel_id: str = None,
             **kwargs) -> None:
@@ -126,6 +127,17 @@ class EcsConstruct(Construct):
             swappiness=60    # Default swappiness value
         )
 
+        # Determine memory reservation based on instance types
+        # Get max memory from instance types (simplified mapping)
+        instance_memory_map = {
+            "g4dn.xlarge": 16384, "g4dn.2xlarge": 32768, "g4dn.4xlarge": 65536,
+            "g5.xlarge": 16384, "g5.2xlarge": 32768, "g5.4xlarge": 65536,
+            "g6.xlarge": 16384, "g6.2xlarge": 32768, "g6.4xlarge": 65536,
+            "g6e.xlarge": 32768, "g6e.2xlarge": 65536, "g6e.4xlarge": 131072,
+        }
+        max_memory = max([instance_memory_map.get(it, 16384) for it in instance_types])
+        memory_reservation = int(max_memory * 0.9)  # Use 90% of available memory
+
         # Add container to the task definition
         container = task_definition.add_container(
             "ComfyUIContainer",
@@ -134,8 +146,7 @@ class EcsConstruct(Construct):
                 docker_image_asset.image_tag
             ),
             gpu_count=1,
-            memory_reservation_mib=15000,
-            memory_limit_mib=15000,  # Set total memory limit
+            memory_reservation_mib=memory_reservation,
             linux_parameters=linux_parameters,
             logging=ecs.LogDriver.aws_logs(
                 stream_prefix="comfy-ui", log_group=log_group),
