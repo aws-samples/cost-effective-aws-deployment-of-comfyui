@@ -9,7 +9,6 @@
 💡 注意:这个解决方案会产生AWS成本。您可以在成本部分找到更多相关信息。
 
 ![comfy](docs/assets/comfy.png)
-![comfy gallery](docs/assets/comfy_gallery.png)
 
 ## 解决方案特点
 
@@ -92,7 +91,7 @@ aws configure
 aws ssm start-session --target "$(aws ec2 describe-instances --filters "Name=tag:Name,Values=ComfyUIStack/Host" "Name=instance-state-name,Values=running" --query 'Reservations[].Instances[].[InstanceId]' --output text)" --region $AWS_DEFAULT_REGION
 
 # 2. 通过 SSH 连接容器
-container_id=$(sudo docker container ls --format '{{.ID}} {{.Image}}' | grep 'comfyui:latest$' | awk '{print $1}')
+container_id=$(sudo docker container ls --format '{{.ID}} {{.Image}}' | grep 'cdk' | awk '{print $1}')
 sudo docker exec -it $container_id /bin/bash
 
 # 3. 安装所需的模型、lora、controlnet 等(也可以将所有内容包含在脚本中一起执行)
@@ -112,11 +111,8 @@ wget -c https://huggingface.co/ai-forever/Real-ESRGAN/blob/main/RealESRGAN_x2.pt
 要充分利用 ComfyUI 的功能并确保无缝体验,请查看详细的[用户指南](docs/USER_GUIDE.md)。该指南涵盖从安装到高级配置的所有步骤,帮助您轻松利用 AI 驱动的图像生成功能。
 
 - [安装扩展(自定义节点)](docs/USER_GUIDE.md#installing-extensions-custom-nodes)
-    - [推荐的扩展](docs/USER_GUIDE.md#recommended-extensions)
-        - [ComfyUI Workspace Manager](docs/USER_GUIDE.md#comfyui-workspace-manager)
 - [安装模型](docs/USER_GUIDE.md#installing-models)
     - [使用 ComfyUI-Manager](docs/USER_GUIDE.md#using-comfyui-manager)
-    - [使用其他扩展](docs/USER_GUIDE.md#using-other-extensions)
     - [手动安装](docs/USER_GUIDE.md#manual-installation)
 - [运行工作流](docs/USER_GUIDE.md#running-a-workflow)
 

@@ -135,7 +135,7 @@ class EcsConstruct(Construct):
             "g6.xlarge": 16384, "g6.2xlarge": 32768, "g6.4xlarge": 65536,
             "g6e.xlarge": 32768, "g6e.2xlarge": 65536, "g6e.4xlarge": 131072,
         }
-        max_memory = max([instance_memory_map.get(it, 16384) for it in instance_types])
+        max_memory = min([instance_memory_map.get(it, 16384) for it in instance_types])
         memory_reservation = int(max_memory * 0.9)  # Use 90% of available memory
 
         # Add container to the task definition

@@ -9,7 +9,6 @@
 💡 注意: このソリューションでは AWS の費用が発生します。費用に関する詳細情報は、コスト セクションを参照してください。
 
 ![comfy](docs/assets/comfy.png)
-![comfy gallery](docs/assets/comfy_gallery.png)
 
 ## ソリューションの機能
 
@@ -108,7 +107,7 @@ arn:aws:cloudformation:[us-east-1]:[your-account-id]:stack/ComfyUIStack/[uuid]
 aws ssm start-session --target "$(aws ec2 describe-instances --filters "Name=tag:Name,Values=ComfyUIStack/Host" "Name=instance-state-name,Values=running" --query 'Reservations[].Instances[].[InstanceId]' --output text)" --region $AWS_DEFAULT_REGION
 
 # 2. コンテナに SSH 接続
-container_id=$(sudo docker container ls --format '{{.ID}} {{.Image}}' | grep 'comfyui:latest$' | awk '{print $1}')
+container_id=$(sudo docker container ls --format '{{.ID}} {{.Image}}' | grep 'cdk' | awk '{print $1}')
 sudo docker exec -it $container_id /bin/bash
 
 # 3. 必要なモデル、lora、controlnet などをインストール (すべてをスクリプトに含めて実行することもできます)
@@ -128,11 +127,8 @@ wget -c https://huggingface.co/ai-forever/Real-ESRGAN/blob/main/RealESRGAN_x2.pt
 ComfyUI の機能を最大限に活用し、シームレスな体験を確保するには、詳細な[ユーザーガイド](docs/USER_GUIDE.md) をご覧ください。このガイドでは、インストールから高度な設定まで、AI 駆動の画像生成の力を簡単に活用するためのすべてのステップを説明しています。
 
 - [拡張機能 (カスタムノード) のインストール](docs/USER_GUIDE.md#installing-extensions-custom-nodes)
-    - [推奨される拡張機能](docs/USER_GUIDE.md#recommended-extensions)
-        - [ComfyUI Workspace Manager](docs/USER_GUIDE.md#comfyui-workspace-manager)
 - [モデルのインストール](docs/USER_GUIDE.md#installing-models)
     - [ComfyUI-Manager の使用](docs/USER_GUIDE.md#using-comfyui-manager)
-    - [他の拡張機能の使用](docs/USER_GUIDE.md#using-other-extensions)
     - [手動インストール](docs/USER_GUIDE.md#manual-installation)
 - [ワークフローの実行](docs/USER_GUIDE.md#running-a-workflow)
 

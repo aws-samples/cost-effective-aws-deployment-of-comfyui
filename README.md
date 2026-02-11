@@ -9,7 +9,6 @@ This sample repository provides a seamless and cost-effective solution to deploy
 💡 Note: this solution will incur AWS costs. You can find more information about it in the costs section.
 
 ![comfy](docs/assets/comfy.png)
-![comfy gallery](docs/assets/comfy_gallery.png)
 
 ## Solution Features
 
@@ -107,7 +106,7 @@ You can access application from output value of `ComfyUIStack.Endpoint`.
 aws ssm start-session --target "$(aws ec2 describe-instances --filters "Name=tag:Name,Values=ComfyUIStack/Host" "Name=instance-state-name,Values=running" --query 'Reservations[].Instances[].[InstanceId]' --output text)" --region $AWS_DEFAULT_REGION
 
 # 2. SSH into Container
-container_id=$(sudo docker container ls --format '{{.ID}} {{.Image}}' | grep 'comfyui:latest$' | awk '{print $1}')
+container_id=$(sudo docker container ls --format '{{.ID}} {{.Image}}' | grep 'cdk' | awk '{print $1}')
 sudo docker exec -it $container_id /bin/bash
 
 # 3. install models, loras, controlnets or whatever you need (you can also include all in a script and execute it to install)
@@ -127,11 +126,8 @@ You may [enable self-signup](docs/DEPLOY_OPTION.md#enable-self-sign-up), enable 
 To unlock the full potential of ComfyUI and ensure a seamless experience, explore our detailed [User Guide](docs/USER_GUIDE.md). This comprehensive resource will guide you through every step, from installation to advanced configurations, empowering you to harness the power of AI-driven image generation with ease.
 
 - [Installing Extensions (Custom Nodes)](docs/USER_GUIDE.md#installing-extensions-custom-nodes)
-    - [Recommended Extensions](docs/USER_GUIDE.md#recommended-extensions)
-        - [ComfyUI Workspace Manager](docs/USER_GUIDE.md#comfyui-workspace-manager)
 - [Installing Models](docs/USER_GUIDE.md#installing-models)
     - [Using ComfyUI-Manager](docs/USER_GUIDE.md#using-comfyui-manager)
-    - [Using Other Extensions](docs/USER_GUIDE.md#using-other-extensions)
     - [Manual Installation](docs/USER_GUIDE.md#manual-installation)
 - [Running a Workflow](docs/USER_GUIDE.md#running-a-workflow)
 
