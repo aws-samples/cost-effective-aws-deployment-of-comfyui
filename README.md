@@ -75,8 +75,8 @@ When prompted, enter your AWS Access Key ID, Secret Access Key, and then the def
 
 1. (First time only) Clone this repo (`git clone https://github.com/aws-samples/cost-effective-aws-deployment-of-comfyui.git`)
 2. (First time only) cd into repo directory (`cd cost-effective-aws-deployment-of-comfyui`)
-3. (仅首次，如果尚未完成 cdk bootstrap) 运行 `make bootstrap` (最小 [IAM 策略](https://github.com/aws/aws-cdk/wiki/Security-And-Safety-Dev-Guide#policies-for-bootstrapping))
-4. 运行 `make` (最小 [IAM 策略](https://github.com/aws/aws-cdk/wiki/Security-And-Safety-Dev-Guide#policies-for-bootstrapping))
+3. (First time only if cdk bootstrap if not done) Run `make bootstrap` (Minimal [IAM Policy](https://github.com/aws/aws-cdk/wiki/Security-And-Safety-Dev-Guide#policies-for-bootstrapping))
+4. Run `make` (Minimal [IAM Policy](https://github.com/aws/aws-cdk/wiki/Security-And-Safety-Dev-Guide#policies-for-bootstrapping))
 
 Depending on your custom_nodes and extenstions in the dockerfile, the deployment will take approx. 8-10 minutes to have ComfyUI ready
  

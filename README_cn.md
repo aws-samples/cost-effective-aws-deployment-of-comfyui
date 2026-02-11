@@ -75,7 +75,8 @@ aws configure
 
 1. (仅限首次) 克隆此存储库 (`git clone https://github.com/aws-samples/cost-effective-aws-deployment-of-comfyui.git`)
 2. (仅限首次) 切换到存储库目录 (`cd cost-effective-aws-deployment-of-comfyui`)
-3. 运行 `make` 进行部署
+3. (仅首次，如果尚未完成 cdk bootstrap) 运行 `make bootstrap` (最小 [IAM 策略](https://github.com/aws/aws-cdk/wiki/Security-And-Safety-Dev-Guide#policies-for-bootstrapping))
+4. 运行 `make` (最小 [IAM 策略](https://github.com/aws/aws-cdk/wiki/Security-And-Safety-Dev-Guide#policies-for-bootstrapping))
 
 根据 Dockerfile 中的自定义节点和扩展,ComfyUI 可能需要 8-10 分钟才能准备就绪。
 
