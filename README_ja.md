@@ -76,7 +76,8 @@ aws configure
 
 1. (初回のみ) このリポジトリをクローンします (`git clone https://github.com/aws-samples/cost-effective-aws-deployment-of-comfyui.git`)
 2. (初回のみ) リポジトリのディレクトリに移動します (`cd cost-effective-aws-deployment-of-comfyui`)
-3. `make` を実行しデプロイ
+3. (cdk bootstrap をしたことがない場合) Run `make bootstrap` (Minimal [IAM Policy](https://github.com/aws/aws-cdk/wiki/Security-And-Safety-Dev-Guide#policies-for-bootstrapping))
+4. Run `make` を実行しデプロイ (Minimal [IAM Policy](https://github.com/aws/aws-cdk/wiki/Security-And-Safety-Dev-Guide#policies-for-bootstrapping))
 
 Dockerfile のカスタムノードと拡張機能によっては、ComfyUI が使用可能になるまで約 8〜10 分かかります。
 

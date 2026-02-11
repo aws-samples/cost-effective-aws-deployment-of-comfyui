@@ -25,12 +25,12 @@ docker-build:
 cdk-deploy: setup docker-build
 	@echo "Running cdk bootstrap..."
 	npx cdk bootstrap
+
+cdk-deploy: setup
 	@echo "Running cdk deploy..."
 	npx cdk deploy
 
-cdk-deploy-force: setup docker-build
-	@echo "Running cdk bootstrap..."
-	npx cdk bootstrap
+cdk-deploy-force: setup
 	@echo "Running cdk deploy..."
 	npx cdk deploy --require-approval never
 
