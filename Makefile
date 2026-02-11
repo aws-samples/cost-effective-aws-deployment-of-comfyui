@@ -22,7 +22,7 @@ docker-build:
 	docker build -t comfyui-aws:latest comfyui_aws_stack/docker/
 	@echo "Docker image built successfully!"
 
-cdk-deploy: setup docker-build
+cdk-bootstrap: setup
 	@echo "Running cdk bootstrap..."
 	npx cdk bootstrap
 
