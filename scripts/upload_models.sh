@@ -2,7 +2,7 @@
 aws ssm start-session --target "$(aws ec2 describe-instances --filters "Name=tag:Name,Values=ComfyUIStack/Host" "Name=instance-state-name,Values=running" --query 'Reservations[*].Instances[*].[InstanceId]' --output text)" --region $AWS_DEFAULT_REGION
 
 # 2. SSH into Container
-container_id=$(sudo docker container ls --format '{{.ID}} {{.Image}}' | grep 'comfyui:latest$' | awk '{print $1}')
+container_id=$(sudo docker container ls --format '{{.ID}} {{.Image}}' | grep 'cdk' | awk '{print $1}')
 sudo docker exec -it $container_id /bin/bash
 
 # 3. install models, loras, controlnets or whatever you need (you can also include all in a script and execute it to install)
