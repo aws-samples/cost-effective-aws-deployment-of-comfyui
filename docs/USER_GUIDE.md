@@ -15,22 +15,6 @@ To install an extension from the ComfyUI-Manager, follow these steps:
 2. Browse and install the extension you want. You'll need to restart the server for the changes to take effect.
 ![comfy_manager_extension](assets/comfy_manager_extension.png)
 
-### Recommended Extensions
-
-There are many ComfyUI extensions available on GitHub, and you may need to install additional ones depending on the workflow you want to use. Here are some recommended extensions that can improve your experience and make it easier to manage ComfyUI:
-
-#### ComfyUI Workspace Manager
-
-The [ComfyUI Workspace Manager](https://github.com/11cafe/comfyui-workspace-manager) provides **workflow management**, allowing you to track version history and **image generation history**. It also lets you install models from Civit AI with just one click and browse or update installed models.
-
-This extension can help switching between different usecases with ease, manage and share workflow in an organization.
-
-Workflow Management:
-![comfy](assets/comfy.png)
-
-Image Generation History Gallery (per user, per workflow):
-![comfy gallery](assets/comfy_gallery.png)
-
 ## Installing Models
 
 There are several ways to install models in ComfyUI.
@@ -43,14 +27,6 @@ The [ComfyUI-Manager](https://github.com/ltdrdata/ComfyUI-Manager) has a databas
 ![comfy_maanger](assets/comfy_manager.png)
 2. Install the model you want.
 ![comfy_manager_model](assets/comfy_manager_model.png)
-
-### Using Other Extensions
-
-There are other model management extensions as well.
-
-For example, the [ComfyUI Workspace Manager](https://github.com/11cafe/comfyui-workspace-manager) allows you to download models from CivitAI and custom URLs.
-
-![comfy_workspace_model.png](assets/comfy_workspace_model.png)
 
 ### Manual Installation
 
