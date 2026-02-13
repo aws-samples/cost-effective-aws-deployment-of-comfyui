@@ -133,6 +133,24 @@ ComfyUI の機能を最大限に活用し、シームレスな体験を確保す
     - [手動インストール](docs/USER_GUIDE.md#manual-installation)
 - [ワークフローの実行](docs/USER_GUIDE.md#running-a-workflow)
 
+### 事前にDockerイメージをビルドする (推奨)
+
+デプロイ時のタイムアウトを回避し、デプロイ時間を短縮するために、Dockerイメージを事前にビルドしてECRにプッシュすることをお勧めします。
+
+```bash
+# イメージをビルドしてECRにプッシュ
+make docker-build-push
+
+# イメージURIを取得
+make docker-get-uri
+
+# イメージURIを環境変数に設定してデプロイ
+export COMFYUI_IMAGE_URI=<表示されたイメージURI>
+npx cdk deploy
+```
+
+詳細な手順については、[事前ビルドガイド](docs/PRE_BUILD_IMAGE.md)をご覧ください。
+
 ### デプロイオプション
 
 包括的なデプロイオプションにより、セキュリティ要件や予算制約に完全に合わせたソリューションを作成できます。AWS 上で ComfyUI の機能を最大限に活用できるよう、柔軟性と制御力を備えています。次の機能を数ステップで有効にできます。

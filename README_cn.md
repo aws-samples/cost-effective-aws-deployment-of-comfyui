@@ -82,6 +82,24 @@ aws configure
 
 `ComfyUIStack.Endpoint` 输出值可用于访问应用程序。
 
+### 预构建Docker镜像 (推荐)
+
+为避免部署超时并缩短部署时间，建议在部署前预先构建Docker镜像并将其推送到ECR。
+
+```bash
+# 构建并推送镜像到ECR
+make docker-build-push
+
+# 获取镜像URI
+make docker-get-uri
+
+# 将镜像URI设置为环境变量并部署
+export COMFYUI_IMAGE_URI=<显示的镜像URI>
+npx cdk deploy
+```
+
+有关详细说明，请参阅[预构建指南](docs/PRE_BUILD_IMAGE.md)。
+
 ### 模型上传
 
 1. 您可以使用 ComfyUI-Manager 或其他扩展功能(自定义节点)来安装模型、Lora、嵌入式和 ControlNet。有关详细信息,请参阅[用户指南](docs/USER_GUIDE.md#model-installation)。

@@ -97,6 +97,24 @@ arn:aws:cloudformation:[us-east-1]:[your-account-id]:stack/ComfyUIStack/[uuid]
 
 You can access application from output value of `ComfyUIStack.Endpoint`.
 
+### Pre-building Docker Image (Recommended)
+
+To avoid deployment timeouts and reduce deployment time, we recommend pre-building the Docker image and pushing it to ECR before deployment.
+
+```bash
+# Build and push the image to ECR
+make docker-build-push
+
+# Get the image URI
+make docker-get-uri
+
+# Set the image URI as an environment variable and deploy
+export COMFYUI_IMAGE_URI=<displayed image URI>
+npx cdk deploy
+```
+
+For detailed instructions, see the [Pre-build Guide](docs/PRE_BUILD_IMAGE.md).
+
 ### Uploading models
 
 1. You can install models, loras, embedding, controlnets over ComfyUI-Manager or other extension (custom node). See [User Guide](docs/USER_GUIDE.md#model-installation) for detail.
